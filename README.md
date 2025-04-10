@@ -56,7 +56,7 @@ python main.py --mode train --config config.yaml
 
 3. Evaluate the model:
 ```bash
-python main.py --mode eval --checkpoint path/to/checkpoint.pth
+python main.py --mode eval --checkpoint checkpoint_name.pth
 ```
 
 ## License

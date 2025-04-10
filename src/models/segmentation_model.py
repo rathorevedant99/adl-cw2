@@ -40,16 +40,22 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         
         cam = self.class_specific(features) # Generates the class activation maps
         
+        # Apply ReLU to ensure non-negative values
+        cam = F.relu(cam)
+        
+        # For classification logits
         pooled = self.gap(cam) # Applies global average pooling to the class activation maps
         pooled = pooled.view(pooled.size(0), -1) # Flattens the class activation maps
         
-        # Generate segmentation maps
+        # Generate segmentation maps with proper normalization
         segmentation_maps = F.interpolate(
             cam,
             size=x.shape[2:],
             mode='bilinear',
             align_corners=False
         )
+        
+        segmentation_maps = F.relu(segmentation_maps)
         
         return {
             'logits': pooled,
