@@ -32,43 +32,35 @@ class Trainer:
         # Setup data loader
         self.train_loader = DataLoader(
             dataset,
-            batch_size=config['batch_size'],
+            batch_size=config['training']['batch_size'],
             shuffle=True,
-            num_workers=config['num_workers']
+            num_workers=config['training']['num_workers']
         )
         
         # Setup optimizer
         self.optimizer = optim.Adam(
             self.model.parameters(),
-            lr=config['learning_rate'],
-            weight_decay=config['weight_decay']
+            lr=config['training']['learning_rate'],
+            weight_decay=config['training']['weight_decay']
         )
         
         # Setup loss functions
         self.cls_criterion = nn.CrossEntropyLoss()
             
-        # Setup checkpoint directory
-        self.checkpoint_dir = Path(config['checkpoint_dir'])
-        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.checkpoint_dir = Path(config['training']['checkpoint_dir'])
+        self.log_dir = Path(config['training']['log_dir'])
         
-        # Setup log directory
-        self.log_dir = Path(config['log_dir'])
-        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.seg_loss_weight = config['training']['seg_loss_weight']
+        self.save_interval = config['training']['save_interval']
         
-        # Setup loss weights
-        self.seg_loss_weight = config.get('seg_loss_weight', 0.1)
-        
-        # Setup save interval
-        self.save_interval = config.get('save_interval', 5)
-        
-        logging.info(f"Training configuration: {self.config}")
+        logging.debug(f"Training configuration: {self.config}")
         
     def train(self):
-        for epoch in range(self.config['num_epochs']):
+        for epoch in range(self.config['training']['num_epochs']):
             self.model.train()
             epoch_loss = 0
             
-            logging.info(f'Epoch {epoch+1}/{self.config["num_epochs"]}')
+            logging.info(f'Epoch {epoch+1}/{self.config["training"]["num_epochs"]}')
             for batch_idx, batch in enumerate(self.train_loader):
                 images = batch['image'].to(self.device)
                 labels = batch['mask'].to(self.device)
@@ -110,13 +102,13 @@ class Trainer:
         batch_size = segmentation_maps.size(0)
         loss = 0
         
-        for i in range(batch_size):
-            # Get the segmentation map for the correct class
-            seg_map = segmentation_maps[i, labels[i]]
-            
-            # Calculate loss based on the segmentation map
-            # This is a simple implementation - you might want to modify this
-            loss += torch.mean(1 - seg_map)  # Encourage high values in the correct class regions
+        for i in range(batch_size): # Dice loss. Could change to other loss functions.
+            seg_map = segmentation_maps[i]
+            label = labels[i]
+            intersection = torch.sum(seg_map * label)
+            union = torch.sum(seg_map) + torch.sum(label)
+            dice_loss = 1 - (2 * intersection + 1e-6) / (union + 1e-6)
+            loss += dice_loss
             
         return loss / batch_size
     

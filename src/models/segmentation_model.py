@@ -55,12 +55,7 @@ class WeaklySupervisedSegmentationModel(nn.Module):
             align_corners=False
         )
         
-        # Apply softmax to get proper probability distributions
-        # Reshape for softmax: [B, C, H, W] -> [B, H*W, C] -> softmax -> [B, H*W, C] -> [B, C, H, W]
-        B, C, H, W = segmentation_maps.shape
-        segmentation_maps = segmentation_maps.permute(0, 2, 3, 1).contiguous().view(B, H*W, C)
-        segmentation_maps = F.softmax(segmentation_maps, dim=2)
-        segmentation_maps = segmentation_maps.view(B, H, W, C).permute(0, 3, 1, 2).contiguous()
+        segmentation_maps = F.relu(segmentation_maps)
         
         return {
             'logits': pooled,

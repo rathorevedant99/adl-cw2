@@ -102,7 +102,7 @@ def main():
         trainer = Trainer(
             model=model,
             dataset=dataset,
-            config=config['training']
+            config=config
         )
         trainer.train()
         logger.info("Training completed")

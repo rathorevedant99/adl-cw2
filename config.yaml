@@ -2,7 +2,7 @@ data:
   root_dir: "data/oxford_pet"
 
 model:
-  num_classes: 37  # Number of pet breeds in the Oxford-IIIT Pet dataset
+  num_classes: 35  # Number of pet breeds in the Oxford-IIIT Pet dataset
   backbone: "resnet50"  # Backbone network for the segmentation model
 
 training:
