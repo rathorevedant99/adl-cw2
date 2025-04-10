@@ -2,46 +2,46 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50, ResNet50_Weights
-
 class WeaklySupervisedSegmentationModel(nn.Module):
+    """
+    Weakly Supervised Segmentation Model
+    """
     def __init__(self, num_classes, backbone='resnet50'):
         super().__init__()
         
         # Initialize backbone
         if backbone == 'resnet50':
             self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
-            # Remove the final fully connected layer
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-            backbone_channels = 2048
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2]) # Remove the final fully connected layer as we just want the features
+            backbone_channels = 2048 # The number of channels in the last convolutional layer of the backbone
         else:
             raise ValueError(f"Unsupported backbone: {backbone}")
         
-        # Class-specific feature maps
-        self.class_specific = nn.Conv2d(backbone_channels, num_classes, kernel_size=1)
+        self.class_specific = nn.Conv2d(backbone_channels, num_classes, kernel_size=1) # A convolutional layer that outputs a feature map for each class
         
-        # Global average pooling
-        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gap = nn.AdaptiveAvgPool2d(1) # A global average pooling layer that reduces the spatial dimensions of the feature maps to 1x1
         
         # Initialize weights
         self._initialize_weights()
     
     def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+        """Initialize the weights of the model"""
+
+        for m in self.modules(): # For each module in the model
+            if isinstance(m, nn.Conv2d): # If the module is a convolutional layer
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu') # Initialize the weights using kaiming_normal initialization
+                if m.bias is not None: # If the bias is not None
+                    nn.init.constant_(m.bias, 0) # Initialize the bias to 0
     
     def forward(self, x):
-        # Extract features
-        features = self.backbone(x)
+        """Forward pass of the model"""
+
+        features = self.backbone(x) # Extracts the features using the backbone we defined
         
-        # Generate class activation maps
-        cam = self.class_specific(features)
+        cam = self.class_specific(features) # Generates the class activation maps
         
-        # Global average pooling for classification
-        pooled = self.gap(cam)
-        pooled = pooled.view(pooled.size(0), -1)
+        pooled = self.gap(cam) # Applies global average pooling to the class activation maps
+        pooled = pooled.view(pooled.size(0), -1) # Flattens the class activation maps
         
         # Generate segmentation maps
         segmentation_maps = F.interpolate(
@@ -61,11 +61,9 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         features = self.backbone(x)
         cam = self.class_specific(features)
         
-        # Get CAM for target class
-        cam = cam[:, target_class:target_class+1]
+        cam = cam[:, target_class:target_class+1] # Extracts the class activation map for the target class
         
-        # Normalize CAM
         cam = F.relu(cam)
-        cam = cam / (cam.max() + 1e-8)
+        cam = cam / (cam.max() + 1e-8) # Normalizes the class activation map
         
         return cam 

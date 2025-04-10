@@ -186,3 +186,6 @@ cache/*
 
 # Ignore the local folder
 local/
+
+# Ignore all files in the experiments directory
+experiments/*

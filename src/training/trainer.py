@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from pathlib import Path
+import logging
+import datetime
+import os
 
 class Trainer:
     def __init__(self, model, dataset, config):
@@ -11,7 +14,19 @@ class Trainer:
         self.config = config
         
         # Setup device
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device_name = config.get('device', 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
+        
+        if device_name == 'mps' and not torch.backends.mps.is_available():
+            logging.warning("MPS device not available, falling back to CPU")
+            device_name = 'cpu'
+        
+        if device_name == 'cuda' and not torch.cuda.is_available():
+            logging.warning("CUDA device not available, falling back to CPU")
+            device_name = 'cpu'
+            
+        self.device = torch.device(device_name)
+        logging.info(f"Using device: {self.device}")
+        
         self.model = self.model.to(self.device)
         
         # Setup data loader
@@ -36,82 +51,85 @@ class Trainer:
         self.checkpoint_dir = Path(config['checkpoint_dir'])
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
+        # Setup log directory
+        self.log_dir = Path(config['log_dir'])
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Setup loss weights
+        self.seg_loss_weight = config.get('seg_loss_weight', 0.1)
+        
+        # Setup save interval
+        self.save_interval = config.get('save_interval', 5)
+        
+        logging.info(f"Training configuration: {self.config}")
+        
     def train(self):
-        for epoch in range(self.config['epochs']):
+        for epoch in range(self.config['num_epochs']):
             self.model.train()
             epoch_loss = 0
             
-            print(f'Epoch {epoch+1}/{self.config["epochs"]}')
+            logging.info(f'Epoch {epoch+1}/{self.config["num_epochs"]}')
             for batch_idx, batch in enumerate(self.train_loader):
-                # Move data to device
                 images = batch['image'].to(self.device)
                 labels = batch['mask'].to(self.device)
                 
-                # Forward pass
-                outputs = self.model(images)
-                logits = outputs['logits']
-                segmentation_maps = outputs['segmentation_maps']
+                outputs = self.model(images) # Forward pass
+                logits = outputs['logits'] # Required for classification loss
+                segmentation_maps = outputs['segmentation_maps'] # Required for segmentation loss
                 
                 # Calculate classification loss
                 cls_loss = self.cls_criterion(logits, labels)
                 
-                # Calculate segmentation loss using weak supervision
-                # We use the class activation maps as pseudo-labels
-                seg_loss = self._calculate_weak_supervision_loss(
-                    segmentation_maps,
-                    labels
-                )
+                # Calculate weak supervision loss
+                seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
                 
                 # Total loss
-                loss = cls_loss + self.config['seg_loss_weight'] * seg_loss
+                loss = cls_loss + self.seg_loss_weight * seg_loss
                 
                 # Backward pass
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 
-                # Update progress
                 epoch_loss += loss.item()
                 
-                # Print progress
+                # Log progress
                 if batch_idx % 10 == 0:
-                    print(f'Batch {batch_idx}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
+                    logging.info(f'Batch {batch_idx}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
             
             # Calculate average epoch loss
             avg_epoch_loss = epoch_loss / len(self.train_loader)
-            print(f'Epoch {epoch+1} average loss: {avg_epoch_loss:.4f}')
+            logging.info(f'Epoch {epoch+1} completed. Average loss: {avg_epoch_loss:.4f}')
             
             # Save checkpoint
-            if (epoch + 1) % self.config['save_interval'] == 0:
-                self._save_checkpoint(epoch, avg_epoch_loss)
-    
+            if (epoch + 1) % self.save_interval == 0:
+                self._save_checkpoint(epoch + 1, avg_epoch_loss)
+                
     def _calculate_weak_supervision_loss(self, segmentation_maps, labels):
-        """Calculate weak supervision loss using class activation maps"""
+        """Calculate weak supervision loss for segmentation"""
         batch_size = segmentation_maps.size(0)
         loss = 0
         
         for i in range(batch_size):
-            # Get CAM for the correct class
-            cam = segmentation_maps[i, labels[i]]
+            # Get the segmentation map for the correct class
+            seg_map = segmentation_maps[i, labels[i]]
             
-            # Normalize CAM
-            cam = torch.relu(cam)
-            cam = cam / (cam.max() + 1e-8)
+            # Calculate loss based on the segmentation map
+            # This is a simple implementation - you might want to modify this
+            loss += torch.mean(1 - seg_map)  # Encourage high values in the correct class regions
             
-            # Calculate loss to encourage high activation in foreground
-            # and low activation in background
-            loss += -torch.mean(cam)
-        
         return loss / batch_size
     
     def _save_checkpoint(self, epoch, loss):
+        """Save model checkpoint"""
         checkpoint = {
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-            'loss': loss
+            'loss': loss,
+            'config': self.config
         }
         
-        checkpoint_path = self.checkpoint_dir / f'checkpoint_epoch_{epoch+1}.pth'
+        checkpoint_path = self.checkpoint_dir / f'checkpoint_epoch_{epoch}.pt'
         torch.save(checkpoint, checkpoint_path)
-        print(f'Saved checkpoint to {checkpoint_path}') 
+        logging.info(f'Saved checkpoint to {checkpoint_path}') 
