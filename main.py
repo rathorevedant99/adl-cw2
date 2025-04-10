@@ -42,7 +42,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Weakly-Supervised Semantic Segmentation')
     parser.add_argument('--mode', type=str, required=True, choices=['train', 'eval'],
                       help='Mode to run the model in')
-    parser.add_argument('--config', type=str, required=True,
+    parser.add_argument('--config', type=str, default='config.yaml',
                       help='Path to configuration file')
     parser.add_argument('--checkpoint', type=str,
                       help='Path to model checkpoint for evaluation')
@@ -76,7 +76,6 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
     
-    # Download dataset if requested
     if args.download:
         logger.info("Downloading dataset...")
         PetDataset.download_dataset(config['data']['root_dir'])
@@ -114,7 +113,8 @@ def main():
         
         # Load checkpoint
         logger.info(f"Loading checkpoint from {args.checkpoint}")
-        checkpoint = torch.load(args.checkpoint, map_location=device)
+        checkpoint_path = Path(config['evaluation']['checkpoint_dir']) / args.checkpoint
+        checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         logger.info("Checkpoint loaded")
         

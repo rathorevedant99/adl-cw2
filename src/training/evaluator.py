@@ -50,15 +50,25 @@ class Evaluator:
             'pixel_accuracy': 0
         }
         
-        all_preds = []
-        all_labels = []
+        all_cls_preds = []
+        all_cls_labels = []
+        all_seg_preds = []
+        all_seg_labels = []
         
         logging.info('Starting model evaluation...')
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.eval_loader):
                 # Move data to device
                 images = batch['image'].to(self.device)
-                labels = batch['mask'].to(self.device)
+                seg_labels = batch['mask'].to(self.device)
+                
+                # Get class labels from segmentation masks (assuming each image belongs to one class)
+                # This is a simplification - you might need to adjust based on your actual data
+                cls_labels = torch.zeros(seg_labels.size(0), dtype=torch.long, device=self.device)
+                for i in range(seg_labels.size(0)):
+                    # Get the most common class in the segmentation mask
+                    unique, counts = torch.unique(seg_labels[i], return_counts=True)
+                    cls_labels[i] = unique[torch.argmax(counts)]
                 
                 # Forward pass
                 outputs = self.model(images)
@@ -73,7 +83,8 @@ class Evaluator:
                 batch_metrics = self._calculate_metrics(
                     cls_preds,
                     seg_preds,
-                    labels
+                    cls_labels,
+                    seg_labels
                 )
                 
                 # Update metrics
@@ -81,8 +92,10 @@ class Evaluator:
                     metrics[k] += v
                 
                 # Store predictions and labels
-                all_preds.extend(cls_preds.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
+                all_cls_preds.extend(cls_preds.cpu().numpy())
+                all_cls_labels.extend(cls_labels.cpu().numpy())
+                all_seg_preds.extend(seg_preds.cpu().numpy())
+                all_seg_labels.extend(seg_labels.cpu().numpy())
                 
                 # Log progress
                 if batch_idx % 10 == 0:
@@ -95,14 +108,14 @@ class Evaluator:
         
         # Calculate confusion matrix using PyTorch
         conf_matrix = self._calculate_confusion_matrix(
-            torch.tensor(all_preds),
-            torch.tensor(all_labels),
+            torch.tensor(all_cls_preds),
+            torch.tensor(all_cls_labels),
             num_classes=self.config['model']['num_classes']
         )
         
         # Log metrics
         logging.info("\nEvaluation Results:")
-        logging.info(f"Accuracy: {metrics['accuracy']:.4f}")
+        logging.info(f"Classification Accuracy: {metrics['accuracy']:.4f}")
         logging.info(f"Mean IoU: {metrics['mean_iou']:.4f}")
         logging.info(f"Pixel Accuracy: {metrics['pixel_accuracy']:.4f}")
         logging.info("\nConfusion Matrix:")
@@ -113,7 +126,7 @@ class Evaluator:
         
         return metrics
     
-    def _calculate_metrics(self, cls_preds, seg_preds, labels):
+    def _calculate_metrics(self, cls_preds, seg_preds, cls_labels, seg_labels):
         """Calculate evaluation metrics"""
         batch_size = cls_preds.size(0)
         metrics = {
@@ -123,12 +136,12 @@ class Evaluator:
         }
         
         for i in range(batch_size):
-            # Classification accuracy
-            metrics['accuracy'] += (cls_preds[i] == labels[i]).float().mean().item()
+            # Classification accuracy - compare predicted class with ground truth class
+            metrics['accuracy'] += (cls_preds[i] == cls_labels[i]).float().item()
             
             # Segmentation metrics
             pred_mask = seg_preds[i]
-            true_mask = labels[i]
+            true_mask = seg_labels[i]
             
             # Calculate IoU for each class
             ious = []
