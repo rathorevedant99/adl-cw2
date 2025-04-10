@@ -13,6 +13,7 @@ This project implements a weakly-supervised neural network for semantic segmenta
 ```
 .
 ├── data/             # Dataset storage and processing
+├── experiments/      # Checkpoints and logs
 ├── src/              # Source code
 │   ├── models/       # Neural network architectures
 │   ├── data.py       # Data loading and preprocessing
@@ -20,34 +21,43 @@ This project implements a weakly-supervised neural network for semantic segmenta
 │   └── utils/        # Helper functions
 ├── experiments/      # Experiment configurations and results
 ├── requirements.txt  # Project dependencies
-└── main.py           # Main entry point
+├── main.py           # Main entry point
+├── config.yaml       # Configuration file
+└── README.md         # Project documentation
 ```
 
 ## Setup
 
-1. Create a virtual environment:
+1. Create and activate virtual environment:
 ```bash
 python3.10 -m venv .env
-source .env/bin/activate  # On Unix/macOS
+source .env/bin/activate
 ```
-
-2. Install dependencies:
+2. Upgrade pip:
+```bash
+pip install --upgrade pip
+```
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-1. Train the model:
+1. Edit the config file:
+```bash
+vim config.yaml
+```
+
+2. Train the model:
 ```bash
 python main.py --mode train --config config.yaml
 ```
 
-2. Evaluate the model:
+3. Evaluate the model:
 ```bash
-python main.py --mode evaluate --checkpoint path/to/checkpoint.pth
+python main.py --mode eval --checkpoint path/to/checkpoint.pth
 ```
 
 ## License
-
 This project is licensed under the terms of the LICENSE file in the root directory.
