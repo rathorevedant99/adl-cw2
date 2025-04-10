@@ -1,0 +1,62 @@
+# Dataset configuration
+data:
+  root_dir: "data/oxford_pet"
+  num_workers: 4
+
+# Model configuration
+model:
+  backbone: "resnet50"
+  num_classes: 37  # Number of pet breeds in the dataset
+
+# Training configuration
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  epochs: 100
+  seg_loss_weight: 1.0
+  save_interval: 5
+  checkpoint_dir: "checkpoints"
+  
+  # Weak supervision settings
+  weak_supervision:
+    use_image_labels: true
+    use_bounding_boxes: false
+    pseudo_label_threshold: 0.5
+
+# Evaluation configuration
+evaluation:
+  batch_size: 32
+  num_workers: 4
+  metrics:
+    - accuracy
+    - mean_iou
+    - pixel_accuracy
+
+# Logging configuration
+logging:
+  log_interval: 100
+  save_images: true
+  num_images_to_save: 4
+
+# Experiment variations for ablation study
+experiments:
+  baseline:
+    seg_loss_weight: 1.0
+    use_image_labels: true
+    use_bounding_boxes: false
+  
+  with_bbox:
+    seg_loss_weight: 1.0
+    use_image_labels: true
+    use_bounding_boxes: true
+  
+  higher_seg_weight:
+    seg_loss_weight: 2.0
+    use_image_labels: true
+    use_bounding_boxes: false
+  
+  lower_seg_weight:
+    seg_loss_weight: 0.5
+    use_image_labels: true
+    use_bounding_boxes: false 
