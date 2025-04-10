@@ -56,7 +56,6 @@ def load_config(config_path):
     
 def make_directories(config):
     """Create directories for the experiment"""
-    Path(config['training']['save_dir']).mkdir(parents=True, exist_ok=True)
     Path(config['training']['checkpoint_dir']).mkdir(parents=True, exist_ok=True)
     Path(config['training']['log_dir']).mkdir(parents=True, exist_ok=True)
     Path(config['data']['root_dir']).mkdir(parents=True, exist_ok=True)
