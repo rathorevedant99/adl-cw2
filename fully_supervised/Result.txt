@@ -1,0 +1,71 @@
+Number of images found: 7390
+Number of masks found: 7390
+Using device: cuda
+Dataset sizes - Training: 6651, Validation: 739
+Starting Epoch 1/20
+Saved visualization samples for epoch 1
+Epoch [1/20] - G_Loss: 77.8236, D_Loss: 0.2036, Val_Acc: 0.8514, Val_IoU: 0.5687
+Starting Epoch 2/20
+Saved visualization samples for epoch 2
+Epoch [2/20] - G_Loss: 64.2281, D_Loss: 0.1829, Val_Acc: 0.8427, Val_IoU: 0.5180
+Starting Epoch 3/20
+Saved visualization samples for epoch 3
+Epoch [3/20] - G_Loss: 58.2585, D_Loss: 0.1810, Val_Acc: 0.8795, Val_IoU: 0.6176
+Starting Epoch 4/20
+Saved visualization samples for epoch 4
+Epoch [4/20] - G_Loss: 53.2304, D_Loss: 0.1817, Val_Acc: 0.9037, Val_IoU: 0.6997
+Starting Epoch 5/20
+Saved visualization samples for epoch 5
+Epoch [5/20] - G_Loss: 50.7089, D_Loss: 0.1755, Val_Acc: 0.8988, Val_IoU: 0.6996
+Saved models at epoch 5
+Starting Epoch 6/20
+Saved visualization samples for epoch 6
+Epoch [6/20] - G_Loss: 48.1064, D_Loss: 0.1716, Val_Acc: 0.9014, Val_IoU: 0.7081
+Starting Epoch 7/20
+Saved visualization samples for epoch 7
+Epoch [7/20] - G_Loss: 45.6461, D_Loss: 0.1730, Val_Acc: 0.9119, Val_IoU: 0.7213
+Starting Epoch 8/20
+Saved visualization samples for epoch 8
+Epoch [8/20] - G_Loss: 43.2666, D_Loss: 0.1723, Val_Acc: 0.9029, Val_IoU: 0.6953
+Starting Epoch 9/20
+Saved visualization samples for epoch 9
+Epoch [9/20] - G_Loss: 41.0022, D_Loss: 0.1727, Val_Acc: 0.9196, Val_IoU: 0.7425
+Starting Epoch 10/20
+Saved visualization samples for epoch 10
+Epoch [10/20] - G_Loss: 39.4071, D_Loss: 0.1666, Val_Acc: 0.9090, Val_IoU: 0.7161
+Saved models at epoch 10
+Starting Epoch 11/20
+Saved visualization samples for epoch 11
+Epoch [11/20] - G_Loss: 37.0288, D_Loss: 0.1711, Val_Acc: 0.9125, Val_IoU: 0.7301
+Starting Epoch 12/20
+Saved visualization samples for epoch 12
+Epoch [12/20] - G_Loss: 34.0673, D_Loss: 0.1727, Val_Acc: 0.9176, Val_IoU: 0.7437
+Starting Epoch 13/20
+Saved visualization samples for epoch 13
+Epoch [13/20] - G_Loss: 32.1181, D_Loss: 0.1693, Val_Acc: 0.9053, Val_IoU: 0.7193
+Starting Epoch 14/20
+Saved visualization samples for epoch 14
+Epoch [14/20] - G_Loss: 30.6121, D_Loss: 0.1707, Val_Acc: 0.9137, Val_IoU: 0.7244
+Starting Epoch 15/20
+Saved visualization samples for epoch 15
+Epoch [15/20] - G_Loss: 29.6417, D_Loss: 0.1641, Val_Acc: 0.9141, Val_IoU: 0.7323
+Saved models at epoch 15
+Starting Epoch 16/20
+Saved visualization samples for epoch 16
+Epoch [16/20] - G_Loss: 28.6342, D_Loss: 0.1666, Val_Acc: 0.9138, Val_IoU: 0.7316
+Starting Epoch 17/20
+Saved visualization samples for epoch 17
+Epoch [17/20] - G_Loss: 27.5784, D_Loss: 0.1656, Val_Acc: 0.9160, Val_IoU: 0.7368
+Starting Epoch 18/20
+Saved visualization samples for epoch 18
+Epoch [18/20] - G_Loss: 26.2387, D_Loss: 0.1679, Val_Acc: 0.9176, Val_IoU: 0.7390
+Starting Epoch 19/20
+Saved visualization samples for epoch 19
+Epoch [19/20] - G_Loss: 25.9356, D_Loss: 0.1660, Val_Acc: 0.9173, Val_IoU: 0.7326
+Starting Epoch 20/20
+Saved visualization samples for epoch 20
+Epoch [20/20] - G_Loss: 25.1187, D_Loss: 0.1648, Val_Acc: 0.9180, Val_IoU: 0.7396
+Saved models at epoch 20
+Training metrics plot saved to 'training_metrics.png'
+Training metrics saved to 'training_metrics.npy'
+Final models saved to './saved_models/'
