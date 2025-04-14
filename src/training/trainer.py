@@ -93,15 +93,37 @@ class Trainer:
                                leave=True, position=0)
             
             for batch_idx, batch in enumerate(progress_bar):
-                images = batch['image'].to(self.device)
-                labels = batch['mask'].to(self.device)
+                # Handle different batch formats
+                if isinstance(batch, dict):
+                    images = batch['image'].to(self.device)
+                    labels = batch['mask'].to(self.device)
+                else:
+                    # If batch is a tuple/list (common in PyTorch DataLoader)
+                    images, labels = batch
+                    images = images.to(self.device)
+                    labels = labels.to(self.device)
                 
-                outputs = self.model(images) # Forward pass
+                # Add debug logging for the first batch
+                if epoch == 0 and batch_idx == 0:
+                    logging.debug(f"Input images shape: {images.shape}")
+                    logging.debug(f"Input labels shape: {labels.shape}")
+                    logging.debug(f"Input labels type: {labels.dtype}")
+                
+                # Forward pass with labels for weakly-supervised learning
+                outputs = self.model(images, labels=labels) 
                 logits = outputs['logits'] # Required for classification loss
                 segmentation_maps = outputs['segmentation_maps'] # Required for segmentation loss
                 
                 # Calculate classification loss
-                cls_loss = self.cls_criterion(logits, labels)
+                # Handle different label formats
+                if labels.dim() > 1 and labels.size(1) > 1:
+                    # If labels are one-hot encoded, convert to class indices
+                    target_labels = torch.argmax(labels, dim=1)
+                else:
+                    # If labels are already class indices
+                    target_labels = labels
+                
+                cls_loss = self.cls_criterion(logits, target_labels)
                 
                 # Calculate weak supervision loss
                 seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
@@ -148,13 +170,33 @@ class Trainer:
     def _calculate_weak_supervision_loss(self, segmentation_maps, labels):
         """Calculate weak supervision loss for segmentation"""
         batch_size = segmentation_maps.size(0)
+        num_classes = segmentation_maps.size(1)
         loss = 0
         
-        for i in range(batch_size): # Dice loss. Could change to other loss functions.
+        # Convert label indices to one-hot encoding if they're not already
+        if labels.dim() == 1 or (labels.dim() == 2 and labels.size(1) == 1):
+            # If labels are class indices (shape: [batch_size] or [batch_size, 1])
+            if labels.dim() == 2:
+                labels = labels.squeeze(1)  # Convert [batch_size, 1] to [batch_size]
+            
+            # Create one-hot encoding
+            one_hot_labels = torch.zeros(batch_size, num_classes, device=self.device)
+            for i in range(batch_size):
+                one_hot_labels[i, labels[i]] = 1
+            labels = one_hot_labels
+        
+        # Now calculate Dice loss with properly formatted labels
+        for i in range(batch_size):
             seg_map = segmentation_maps[i]
-            label = labels[i]
-            intersection = torch.sum(seg_map * label)
-            union = torch.sum(seg_map) + torch.sum(label)
+            label_idx = labels[i].argmax() if labels.dim() > 1 else labels[i]
+            
+            # Create a binary mask for the target class
+            target_mask = torch.zeros_like(seg_map)
+            target_mask[label_idx] = 1
+            
+            # Calculate Dice loss for the target class
+            intersection = torch.sum(seg_map[label_idx] * target_mask[label_idx])
+            union = torch.sum(seg_map[label_idx]) + torch.sum(target_mask[label_idx])
             dice_loss = 1 - (2 * intersection + 1e-6) / (union + 1e-6)
             loss += dice_loss
             
