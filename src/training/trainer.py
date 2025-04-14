@@ -116,9 +116,44 @@ class Trainer:
                 
                 # Calculate classification loss
                 # Handle different label formats
-                if labels.dim() > 1 and labels.size(1) > 1:
-                    # If labels are one-hot encoded, convert to class indices
-                    target_labels = torch.argmax(labels, dim=1)
+                if labels.dim() > 1:
+                    if labels.size(1) > 1 and labels.size(1) <= self.config['model']['num_classes']:
+                        # If labels are one-hot encoded, convert to class indices
+                        target_labels = torch.argmax(labels, dim=1)
+                    else:
+                        # If labels are segmentation masks (H,W) format, extract class indices
+                        # For segmentation masks, we'll use the most common class in the mask
+                        # First, flatten the spatial dimensions
+                        if labels.dim() == 3:  # [batch_size, H, W]
+                            flat_labels = labels.reshape(labels.size(0), -1)
+                        elif labels.dim() == 4:  # [batch_size, C, H, W]
+                            # If it's a one-hot segmentation mask
+                            flat_labels = labels.argmax(dim=1).reshape(labels.size(0), -1)
+                        else:
+                            # Unexpected format, use zeros as fallback
+                            target_labels = torch.zeros(labels.size(0), dtype=torch.long, device=self.device)
+                            print(f"Warning: Unexpected label format: {labels.shape}")
+                            
+                        # For each sample, find the most common class (mode)
+                        target_labels = torch.zeros(labels.size(0), dtype=torch.long, device=self.device)
+                        for i in range(labels.size(0)):
+                            # Count occurrences of each class
+                            unique_values, counts = torch.unique(flat_labels[i], return_counts=True)
+                            # Find the most common class (excluding background class 0 if possible)
+                            if len(unique_values) > 1 and 0 in unique_values:
+                                # Filter out background class
+                                mask = unique_values != 0
+                                filtered_values = unique_values[mask]
+                                filtered_counts = counts[mask]
+                                if len(filtered_values) > 0:
+                                    # Use the most common non-background class
+                                    target_labels[i] = filtered_values[filtered_counts.argmax()]
+                                else:
+                                    # If only background remains, use it
+                                    target_labels[i] = 0
+                            else:
+                                # Use the most common class
+                                target_labels[i] = unique_values[counts.argmax()]
                 else:
                     # If labels are already class indices
                     target_labels = labels
@@ -173,32 +208,91 @@ class Trainer:
         num_classes = segmentation_maps.size(1)
         loss = 0
         
-        # Convert label indices to one-hot encoding if they're not already
-        if labels.dim() == 1 or (labels.dim() == 2 and labels.size(1) == 1):
-            # If labels are class indices (shape: [batch_size] or [batch_size, 1])
-            if labels.dim() == 2:
-                labels = labels.squeeze(1)  # Convert [batch_size, 1] to [batch_size]
-            
+        # Handle different label formats
+        if labels.dim() == 1:  # Simple class indices [batch_size]
             # Create one-hot encoding
             one_hot_labels = torch.zeros(batch_size, num_classes, device=self.device)
             for i in range(batch_size):
                 one_hot_labels[i, labels[i]] = 1
-            labels = one_hot_labels
+            class_labels = one_hot_labels
+            
+        elif labels.dim() == 2:
+            if labels.size(1) == 1:  # Class indices as [batch_size, 1]
+                # Create one-hot encoding
+                one_hot_labels = torch.zeros(batch_size, num_classes, device=self.device)
+                for i in range(batch_size):
+                    one_hot_labels[i, labels[i, 0]] = 1
+                class_labels = one_hot_labels
+                
+            elif labels.size(1) == num_classes:  # Already one-hot [batch_size, num_classes]
+                class_labels = labels
+                
+            else:  # Unexpected format, try to handle it
+                print(f"Warning: Unexpected label format in weak supervision loss: {labels.shape}")
+                # Default to first class
+                class_labels = torch.zeros(batch_size, num_classes, device=self.device)
+                class_labels[:, 0] = 1
+                
+        elif labels.dim() == 3:  # Segmentation masks [batch_size, H, W]
+            # Extract class labels from segmentation masks
+            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
+            for i in range(batch_size):
+                # Count occurrences of each class
+                flat_mask = labels[i].reshape(-1)
+                unique_classes, counts = torch.unique(flat_mask, return_counts=True)
+                
+                # Set 1 for classes that appear in the mask
+                for cls_idx, count in zip(unique_classes, counts):
+                    if cls_idx < num_classes and count > 0:
+                        class_labels[i, cls_idx] = 1
+                        
+                # If no valid classes found, use class 0
+                if class_labels[i].sum() == 0:
+                    class_labels[i, 0] = 1
+                    
+        elif labels.dim() == 4:  # One-hot segmentation masks [batch_size, C, H, W]
+            # Extract class presence from one-hot masks
+            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
+            for i in range(batch_size):
+                for c in range(min(labels.size(1), num_classes)):
+                    if torch.any(labels[i, c] > 0):
+                        class_labels[i, c] = 1
+                        
+                # If no valid classes found, use class 0
+                if class_labels[i].sum() == 0:
+                    class_labels[i, 0] = 1
+        else:
+            print(f"Error: Unsupported label format in weak supervision loss: {labels.shape}")
+            # Default to first class
+            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
+            class_labels[:, 0] = 1
         
         # Now calculate Dice loss with properly formatted labels
         for i in range(batch_size):
             seg_map = segmentation_maps[i]
-            label_idx = labels[i].argmax() if labels.dim() > 1 else labels[i]
             
-            # Create a binary mask for the target class
-            target_mask = torch.zeros_like(seg_map)
-            target_mask[label_idx] = 1
+            # Get the target class indices (non-zero elements in class_labels)
+            target_indices = torch.nonzero(class_labels[i]).squeeze(1)
             
-            # Calculate Dice loss for the target class
-            intersection = torch.sum(seg_map[label_idx] * target_mask[label_idx])
-            union = torch.sum(seg_map[label_idx]) + torch.sum(target_mask[label_idx])
-            dice_loss = 1 - (2 * intersection + 1e-6) / (union + 1e-6)
-            loss += dice_loss
+            # If no target indices, use class 0
+            if target_indices.numel() == 0:
+                target_indices = torch.tensor([0], device=self.device)
+            
+            # Calculate Dice loss for each target class
+            class_dice_loss = 0
+            for idx in target_indices:
+                # Create a binary mask for the target class
+                target_mask = torch.zeros_like(seg_map)
+                target_mask[idx] = 1
+                
+                # Calculate Dice loss for the target class
+                intersection = torch.sum(seg_map[idx] * target_mask[idx])
+                union = torch.sum(seg_map[idx]) + torch.sum(target_mask[idx])
+                dice_loss = 1 - (2 * intersection + 1e-6) / (union + 1e-6)
+                class_dice_loss += dice_loss
+            
+            # Average over target classes
+            loss += class_dice_loss / len(target_indices)
             
         return loss / batch_size
     

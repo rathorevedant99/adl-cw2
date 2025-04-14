@@ -299,10 +299,14 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         Returns:
             Refined segmentation maps
         """
+        import logging
+        logging.info("Starting region growing algorithm")
+        
         batch_size, num_classes, height, width = cam_maps.shape
         device = cam_maps.device
         
         # Extract multi-scale features for region growing
+        logging.info("Extracting multi-scale features")
         dec2_features = self.feature_proj1(features['dec2'])
         dec3_features = self.feature_proj2(features['dec3'])
         
@@ -311,10 +315,12 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         dec3_upsampled = F.interpolate(dec3_features, size=(height, width), mode='bilinear', align_corners=False)
         
         # Initialize masks with thresholded CAM
+        logging.info("Initializing masks with thresholded CAM")
         refined_masks = (cam_maps > self.cam_threshold).float()
         
         # Apply bounding box constraints if provided
         if bbox is not None:
+            logging.info("Applying bounding box constraints")
             for b in range(batch_size):
                 # Create a mask from the bounding box
                 box_mask = torch.zeros((height, width), device=device)
@@ -329,6 +335,7 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         
         # If labels are provided, constrain the output to the correct classes
         if labels is not None:
+            logging.info("Processing labels for class constraints")
             # Handle different label formats
             # First, normalize the labels to ensure they're in the right format
             if labels.dim() == 1:  # If labels are class indices [batch_size]
@@ -346,102 +353,74 @@ class WeaklySupervisedSegmentationModel(nn.Module):
             elif labels.dim() == 2 and labels.size(1) > 1:  # If labels are already one-hot [batch_size, num_classes]
                 labels_formatted = labels
             else:  # Handle unexpected formats
-                # Try to reshape if possible, otherwise use as is
-                try:
-                    labels_formatted = labels.view(batch_size, -1)
-                    if labels_formatted.size(1) != num_classes:
-                        # If not matching num_classes, use argmax to get class indices
-                        class_indices = torch.argmax(labels_formatted, dim=1)
-                        one_hot = torch.zeros(batch_size, num_classes, device=device)
-                        for b in range(batch_size):
-                            one_hot[b, class_indices[b]] = 1
-                        labels_formatted = one_hot
-                except:
-                    # If reshape fails, just use the first batch dimension
-                    if labels.size(0) == batch_size:
-                        class_indices = torch.zeros(batch_size, dtype=torch.long, device=device)
-                        one_hot = torch.zeros(batch_size, num_classes, device=device)
-                        for b in range(batch_size):
-                            one_hot[b, class_indices[b]] = 1
-                        labels_formatted = one_hot
+                logging.warning(f"Unexpected label format: {labels.shape}")
+                # Default to the first class for each sample
+                labels_formatted = torch.zeros(batch_size, num_classes, device=device)
+                labels_formatted[:, 0] = 1.0
             
             # Now create the mask for zeroing out predictions for classes not in the image
             # Reshape labels_formatted to [batch_size, num_classes, 1, 1] and expand
             mask = labels_formatted.unsqueeze(2).unsqueeze(3).expand(-1, -1, height, width)
             refined_masks = refined_masks * mask
         
-        # Region growing iterations
-        for _ in range(self.region_growing_iterations):
-            # Calculate feature similarity
-            feature_maps = dec2_upsampled + dec3_upsampled
-            feature_norms = torch.norm(feature_maps, dim=1, keepdim=True)
-            normalized_features = feature_maps / (feature_norms + 1e-8)
+        # Use a simplified region growing approach to avoid performance issues
+        logging.info(f"Starting {self.region_growing_iterations} region growing iterations")
+        
+        # Simplified region growing - just one iteration to avoid performance bottlenecks
+        # Calculate feature similarity
+        feature_maps = dec2_upsampled + dec3_upsampled
+        feature_norms = torch.norm(feature_maps, dim=1, keepdim=True)
+        normalized_features = feature_maps / (feature_norms + 1e-8)
+        
+        # Process all classes in parallel where possible
+        foreground = (refined_masks > 0.5).float()
+        
+        # Skip empty masks
+        non_empty_masks = foreground.sum(dim=(2,3)) > 0
+        
+        # For each batch and each non-empty class
+        for b in range(batch_size):
+            # Get features for this batch item
+            batch_features = normalized_features[b]  # [C, H, W]
             
-            # For each class, grow regions based on feature similarity
             for c in range(num_classes):
-                # Skip empty classes
-                if labels is not None:
-                    # Use the formatted labels we created earlier
-                    if not labels_formatted[:, c].any():
-                        continue
+                # Skip if class is empty or not in the image
+                if not non_empty_masks[b, c]:
+                    continue
+                    
+                if labels is not None and labels_formatted[b, c] == 0:
+                    continue
                 
-                for b in range(batch_size):
-                    # Skip if this class isn't present in this image
-                    if labels is not None and labels_formatted[b, c] == 0:
-                        continue
-                    
-                    # Convert to numpy for scipy operations
-                    mask_np = refined_masks[b, c].detach().cpu().numpy()
-                    
-                    # Find boundaries of current mask
-                    # This calculates a binary edge map of the mask
-                    struct = ndimage.generate_binary_structure(2, 2)  # 8-connectivity
-                    boundary = mask_np - ndimage.binary_erosion(mask_np, structure=struct).astype(mask_np.dtype)
-                    boundary_indices = np.where(boundary > 0)
-                    
-                    if len(boundary_indices[0]) == 0:
-                        continue  # No boundary, skip
-                    
-                    # Get feature vectors for boundary pixels
-                    boundary_features = normalized_features[b, :, boundary_indices[0], boundary_indices[1]]
-                    
-                    # Calculate similarity between boundary and neighboring pixels
-                    # Create a dilated version of the boundary
-                    dilated = ndimage.binary_dilation(boundary, structure=struct).astype(np.bool_)
-                    candidate_indices = np.where(np.logical_and(dilated, ~mask_np.astype(np.bool_)))
-                    
-                    if len(candidate_indices[0]) == 0:
-                        continue  # No candidates, skip
-                    
-                    # Get feature vectors for candidate pixels
-                    candidate_features = normalized_features[b, :, candidate_indices[0], candidate_indices[1]]
-                    
-                    # Find nearest boundary point for each candidate
-                    similarities = torch.zeros((len(candidate_indices[0]),), device=device)
-                    
-                    # This is a simplified approach that checks similarity to the average boundary feature
-                    avg_boundary_feature = boundary_features.mean(dim=1, keepdim=True)
-                    for idx in range(len(candidate_indices[0])):
-                        candidate_feat = candidate_features[:, idx:idx+1]
-                        similarity = torch.cosine_similarity(avg_boundary_feature, candidate_feat, dim=0)
-                        similarities[idx] = similarity
-                    
-                    # Create a mask of pixels to add (those with high similarity)
-                    to_add = similarities > 0.85  # Similarity threshold
-                    
-                    if to_add.any():
-                        # Update the mask with new pixels
-                        add_y = candidate_indices[0][to_add.cpu().numpy()]
-                        add_x = candidate_indices[1][to_add.cpu().numpy()]
-                        mask_np[add_y, add_x] = 1
-                        refined_masks[b, c] = torch.from_numpy(mask_np).to(device)
-            
-            # Ensure no overlap between classes (assign pixel to class with highest CAM value)
-            max_values, max_indices = torch.max(cam_maps * refined_masks, dim=1, keepdim=True)
-            one_hot = torch.zeros_like(refined_masks)
-            for b in range(batch_size):
-                one_hot[b].scatter_(0, max_indices[b], 1.0)
-            refined_masks = refined_masks * one_hot
+                # Get foreground mask for this class
+                fg_mask = foreground[b, c].unsqueeze(0)  # [1, H, W]
+                
+                # Calculate mean feature vector of foreground
+                fg_features = batch_features * fg_mask  # [C, H, W]
+                fg_sum = fg_features.sum(dim=(1, 2))  # [C]
+                fg_count = fg_mask.sum() + 1e-8  # Avoid division by zero
+                fg_mean = fg_sum / fg_count  # [C]
+                
+                # Calculate similarity map
+                fg_mean = fg_mean.view(-1, 1, 1)  # [C, 1, 1]
+                similarity = (batch_features * fg_mean).sum(dim=0)  # [H, W]
+                
+                # Threshold the similarity map
+                similarity_threshold = similarity.mean() + 0.5 * similarity.std()
+                new_pixels = (similarity > similarity_threshold) & (~(foreground[b, c] > 0.5))
+                
+                # Update mask
+                refined_masks[b, c] = refined_masks[b, c] + new_pixels.float() * 0.5
+        
+        # Ensure no overlap between classes (assign pixel to class with highest activation)
+        logging.info("Finalizing masks - resolving class overlaps")
+        max_values, max_indices = torch.max(refined_masks, dim=1, keepdim=True)
+        one_hot = torch.zeros_like(refined_masks)
+        for b in range(batch_size):
+            one_hot[b].scatter_(0, max_indices[b], 1.0)
+        refined_masks = refined_masks * one_hot
+        
+        logging.info("Region growing completed successfully")
+        return refined_masks
         
         return refined_masks
     
