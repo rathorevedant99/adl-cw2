@@ -51,7 +51,15 @@ class Trainer:
         self.log_dir = Path(config['training']['log_dir'])
         
         self.seg_loss_weight = config['training']['seg_loss_weight']
-        self.save_interval = config['training']['save_interval']
+        
+        # Handle both save_interval (old) and save_frequency (new) parameter names
+        if 'save_frequency' in config['training']:
+            self.save_interval = config['training']['save_frequency']
+        elif 'save_interval' in config['training']:
+            self.save_interval = config['training']['save_interval']
+        else:
+            self.save_interval = 5  # Default value
+            logging.warning("Neither save_frequency nor save_interval found in config, using default value of 5")
         
         logging.debug(f"Training configuration: {self.config}")
         
