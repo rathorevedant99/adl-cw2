@@ -300,8 +300,7 @@ def main():
         # Initialize model
         logger.info("Initializing model...")
         model = WeaklySupervisedSegmentationModel(
-            num_classes=config['model']['num_classes'],
-            backbone=config['model']['backbone']
+            num_classes=config['model']['num_classes']
         ).to(device)
         logger.info("Model initialized")
         
@@ -353,7 +352,6 @@ def main():
         logger.info("Initializing model...")
         model = WeaklySupervisedSegmentationModel(
             num_classes=config['model']['num_classes'],
-            backbone=config['model']['backbone'],
             cam_threshold=config['model'].get('cam_threshold', 0.2),
             region_growing_iterations=config['model'].get('region_growing_iterations', 5)
         ).to(device)
@@ -441,7 +439,6 @@ def main():
         logger.info("Initializing model...")
         model = WeaklySupervisedSegmentationModel(
             num_classes=config['model']['num_classes'],
-            backbone=config['model']['backbone'],
             cam_threshold=config['model'].get('cam_threshold', 0.2),
             region_growing_iterations=config['model'].get('region_growing_iterations', 5)
         ).to(device)
