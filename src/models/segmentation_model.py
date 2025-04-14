@@ -329,8 +329,45 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         
         # If labels are provided, constrain the output to the correct classes
         if labels is not None:
-            # Zero out predictions for classes not in the image
-            mask = labels.unsqueeze(2).unsqueeze(3).expand(-1, -1, height, width)
+            # Handle different label formats
+            # First, normalize the labels to ensure they're in the right format
+            if labels.dim() == 1:  # If labels are class indices [batch_size]
+                # Convert to one-hot encoding
+                one_hot = torch.zeros(batch_size, num_classes, device=device)
+                for b in range(batch_size):
+                    one_hot[b, labels[b]] = 1
+                labels_formatted = one_hot
+            elif labels.dim() == 2 and labels.size(1) == 1:  # If labels are [batch_size, 1]
+                # Convert to one-hot encoding
+                one_hot = torch.zeros(batch_size, num_classes, device=device)
+                for b in range(batch_size):
+                    one_hot[b, labels[b, 0]] = 1
+                labels_formatted = one_hot
+            elif labels.dim() == 2 and labels.size(1) > 1:  # If labels are already one-hot [batch_size, num_classes]
+                labels_formatted = labels
+            else:  # Handle unexpected formats
+                # Try to reshape if possible, otherwise use as is
+                try:
+                    labels_formatted = labels.view(batch_size, -1)
+                    if labels_formatted.size(1) != num_classes:
+                        # If not matching num_classes, use argmax to get class indices
+                        class_indices = torch.argmax(labels_formatted, dim=1)
+                        one_hot = torch.zeros(batch_size, num_classes, device=device)
+                        for b in range(batch_size):
+                            one_hot[b, class_indices[b]] = 1
+                        labels_formatted = one_hot
+                except:
+                    # If reshape fails, just use the first batch dimension
+                    if labels.size(0) == batch_size:
+                        class_indices = torch.zeros(batch_size, dtype=torch.long, device=device)
+                        one_hot = torch.zeros(batch_size, num_classes, device=device)
+                        for b in range(batch_size):
+                            one_hot[b, class_indices[b]] = 1
+                        labels_formatted = one_hot
+            
+            # Now create the mask for zeroing out predictions for classes not in the image
+            # Reshape labels_formatted to [batch_size, num_classes, 1, 1] and expand
+            mask = labels_formatted.unsqueeze(2).unsqueeze(3).expand(-1, -1, height, width)
             refined_masks = refined_masks * mask
         
         # Region growing iterations
@@ -343,12 +380,14 @@ class WeaklySupervisedSegmentationModel(nn.Module):
             # For each class, grow regions based on feature similarity
             for c in range(num_classes):
                 # Skip empty classes
-                if labels is not None and not labels[:, c].any():
-                    continue
+                if labels is not None:
+                    # Use the formatted labels we created earlier
+                    if not labels_formatted[:, c].any():
+                        continue
                 
                 for b in range(batch_size):
                     # Skip if this class isn't present in this image
-                    if labels is not None and labels[b, c] == 0:
+                    if labels is not None and labels_formatted[b, c] == 0:
                         continue
                     
                     # Convert to numpy for scipy operations
