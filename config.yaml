@@ -1,25 +1,128 @@
-data:
-  root_dir: "data/oxford_pet"
+################################################################################
+# ADL Coursework 2: Weakly-Supervised Semantic Segmentation Configuration
+################################################################################
 
+# Dataset Configuration
+data:
+  # Main dataset path (Oxford-IIIT Pet dataset)
+  root_dir: "data/oxford_pet"
+  
+  # Additional weakly-labeled data directory
+  additional_data_dir: "data/additional"
+  
+  # Data processing options
+  use_augmentation: true
+  image_size: [256, 256]  # Target image size [height, width]
+  normalize: true  # Whether to normalize images
+  num_workers: 4  # Number of workers for data loading
+
+# Data Collection Configuration
+data_collection:
+  # Flickr data collection settings
+  flickr:
+    enabled: true
+    search_terms: ["cat", "dog", "pet", "kitten", "puppy"]
+    max_images_per_term: 200
+    min_image_size: [512, 512]  # Minimum dimensions [height, width]
+  
+  # OpenImages data collection settings
+  openimages:
+    enabled: true
+    categories: ["Cat", "Dog"]
+    max_images: 500
+    confidence_threshold: 0.7
+  
+  # COCO data collection settings
+  coco:
+    enabled: true
+    categories: ["cat", "dog"]
+    max_images: 300
+
+# Model Configuration
 model:
   num_classes: 35  # Number of pet breeds in the Oxford-IIIT Pet dataset
-  backbone: "resnet50"  # Backbone network for the segmentation model
+  architecture: "unet"  # Base architecture type: unet only
+  
+  # U-Net parameters
+  base_filters: 64  # Number of filters in the first layer (doubles with each depth)
+  depth: 5  # U-Net depth (number of downsampling operations)
+  dropout_rate: 0.2  # Dropout rate for regularization
+  
+  # Weakly-supervised segmentation parameters
+  cam_threshold: 0.2  # Threshold for class activation maps
+  region_growing_iterations: 5  # Number of iterations for region growing
+  boundary_refinement: true  # Enable boundary refinement module
+  multi_scale_fusion: true  # Enable multi-scale feature fusion
 
+# Training Configuration
 training:
+  # Basic training parameters
   batch_size: 32
   num_epochs: 30
   learning_rate: 0.001
   weight_decay: 0.0001
+  optimizer: "adam"  # Options: adam, sgd, adamw
+  scheduler: "cosine"  # Options: step, cosine, plateau
+  step_size: 10  # For step scheduler
+  gamma: 0.1  # For step scheduler
+  
+  # Directories and logging
   checkpoint_dir: "experiments/checkpoints"
   log_dir: "experiments/logs"
-  log_interval: 10
-  save_interval: 5
+  log_interval: 10  # Log every N batches
+  save_frequency: 5  # Save checkpoint every N epochs
   num_workers: 4
-  device: "cuda" # cuda, mps, cpu
-  seg_loss_weight: 0.1
+  device: "cuda"  # cuda, mps, cpu
+  
+  # Loss weights and components
+  seg_loss_weight: 0.1  # Weight for segmentation loss
+  cls_loss_weight: 1.0  # Weight for classification loss
+  boundary_loss_weight: 0.05  # Weight for boundary refinement loss
+  size_constraint_weight: 0.05  # Weight for size constraint loss
+  
+  # Weakly-supervised training options
+  generate_pseudo_labels: true  # Generate pseudo labels during training
+  pseudo_label_update_frequency: 5  # Update pseudo labels every N epochs
+  consistency_weight: 1.0  # Weight for consistency loss
+  curriculum_learning: true  # Use curriculum learning strategy
+  curriculum_steps: [5, 15, 25]  # Epochs to change curriculum difficulty
+  strong_augment: true  # Use strong augmentation for consistency
 
+# Evaluation Configuration
 evaluation:
   batch_size: 32
-  metrics: ["accuracy", "iou"]
+  metrics: ["accuracy", "mean_iou", "pixel_accuracy", "dice", "boundary_f1"]
   num_workers: 4
   checkpoint_dir: "experiments/checkpoints"
+  save_predictions: false
+  visualization_dir: "experiments/visualizations"
+  class_wise_metrics: true  # Report metrics for each class
+  confusion_matrix: true  # Generate confusion matrix
+
+# Experiment Configuration
+experiment:
+  # Baseline experiment configurations
+  baseline_configs:
+    - name: "cam_threshold"
+      values: [0.1, 0.2, 0.3, 0.4]
+    - name: "region_growing_iterations"
+      values: [3, 5, 7, 10]
+    - name: "consistency_weight"
+      values: [0.0, 0.5, 1.0, 2.0]
+    - name: "base_filters"
+      values: [32, 64, 128]
+  
+  # Ablation study configurations
+  ablation_configs:
+    - name: "pseudo_labeling"
+      params:
+        generate_pseudo_labels: [true, false]
+    - name: "curriculum_learning"
+      params:
+        curriculum_learning: [true, false]
+    - name: "consistency_regularization"
+      params:
+        consistency_weight: [0.0, 1.0]
+    - name: "boundary_refinement"
+      params:
+        boundary_refinement: [true, false]
