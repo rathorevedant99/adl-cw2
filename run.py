@@ -282,13 +282,18 @@ def main():
             logger.info(f"Collected {len(images)} images from {source}")
     
     elif args.mode == 'train':
+        # Download dataset if requested
+        if args.download:
+            logger.info("Downloading dataset...")
+            PetDataset.download_dataset(config['data']['root_dir'])
+            logger.info("Dataset download completed")
+        
         # Initialize dataset
         logger.info("Initializing dataset...")
         dataset = PetDataset(
             root_dir=config['data']['root_dir'],
             split='train',
-            weak_supervision=False,  # Use full supervision for regular training
-            download=args.download
+            weak_supervision=False  # Use full supervision for regular training
         )
         logger.info(f"Dataset initialized with {len(dataset)} samples")
         
@@ -329,13 +334,18 @@ def main():
         logger.info(f"Final model saved to {final_path}")
     
     elif args.mode == 'train_weak':
+        # Download dataset if requested
+        if args.download:
+            logger.info("Downloading dataset...")
+            PetDataset.download_dataset(config['data']['root_dir'])
+            logger.info("Dataset download completed")
+            
         # Initialize dataset with weak supervision
         logger.info("Initializing dataset with weak supervision...")
         original_dataset = PetDataset(
             root_dir=config['data']['root_dir'],
             split='train',
-            weak_supervision=True,  # Use image-level labels only
-            download=args.download
+            weak_supervision=True  # Use image-level labels only
         )
         logger.info(f"Original dataset initialized with {len(original_dataset)} samples")
         
@@ -412,13 +422,18 @@ def main():
             logger.error("Checkpoint path must be provided for evaluation mode")
             return
         
+        # Download dataset if requested
+        if args.download:
+            logger.info("Downloading dataset...")
+            PetDataset.download_dataset(config['data']['root_dir'])
+            logger.info("Dataset download completed")
+            
         # Initialize dataset
         logger.info(f"Initializing evaluation dataset (split: {args.eval_split})...")
         dataset = PetDataset(
             root_dir=config['data']['root_dir'],
             split=args.eval_split,
-            weak_supervision=False,  # Always use full supervision for evaluation
-            download=args.download
+            weak_supervision=False  # Always use full supervision for evaluation
         )
         logger.info(f"Dataset initialized with {len(dataset)} samples")
         
