@@ -189,3 +189,5 @@ local/
 
 # Ignore all files in the experiments directory
 experiments/*
+
+*tex*
