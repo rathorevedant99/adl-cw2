@@ -54,22 +54,9 @@ class Trainer:
         self.checkpoint_dir = Path(config['checkpoint_dir'])
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
-<<<<<<< HEAD
-        self.seg_loss_weight = config['training']['seg_loss_weight']
-        
-        # Handle both save_interval (old) and save_frequency (new) parameter names
-        if 'save_frequency' in config['training']:
-            self.save_interval = config['training']['save_frequency']
-        elif 'save_interval' in config['training']:
-            self.save_interval = config['training']['save_interval']
-        else:
-            self.save_interval = 5  # Default value
-            logging.warning("Neither save_frequency nor save_interval found in config, using default value of 5")
-=======
         # Setup log directory
         self.log_dir = Path(config['log_dir'])
         self.log_dir.mkdir(parents=True, exist_ok=True)
->>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
         
         # Setup loss weights
         self.seg_loss_weight = config.get('seg_loss_weight', 0.1)
@@ -80,47 +67,10 @@ class Trainer:
         logging.info(f"Training configuration: {self.config}")
         
     def train(self):
-<<<<<<< HEAD
-        # Initialize history dictionary to track metrics
-        history = {
-            'loss': [],
-            'cls_loss': [],
-            'seg_loss': []
-        }
-        
-        # Create log directory for plots
-        plots_dir = self.log_dir / 'plots'
-        plots_dir.mkdir(exist_ok=True)
-        
-        num_epochs = self.config['training']['num_epochs']
-        
-        for epoch in range(num_epochs):
-=======
         for epoch in range(self.config['num_epochs']):
->>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
             self.model.train()
             epoch_loss = 0
-            epoch_cls_loss = 0
-            epoch_seg_loss = 0
             
-<<<<<<< HEAD
-            logging.info(f'Epoch {epoch+1}/{num_epochs}')
-            
-            # Create progress bar for batches
-            progress_bar = tqdm(self.train_loader, desc=f'Epoch {epoch+1}/{num_epochs}', 
-                               leave=True, position=0)
-            
-            for batch_idx, batch in enumerate(progress_bar):
-                # Handle different batch formats
-                if isinstance(batch, dict):
-                    images = batch['image'].to(self.device)
-                    labels = batch['mask'].to(self.device)
-                else:
-                    # If batch is a tuple/list (common in PyTorch DataLoader)
-                    images, labels = batch
-                    images = images.to(self.device)
-                    labels = labels.to(self.device)
-=======
             logging.info(f'Epoch {epoch+1}/{self.config["num_epochs"]}')
             for batch_idx, batch in enumerate(self.train_loader):
                 images = batch['image'].to(self.device)
@@ -232,93 +182,6 @@ class Trainer:
         num_classes = segmentation_maps.size(1)
         loss = 0
         
-<<<<<<< HEAD
-        # Handle different label formats
-        if labels.dim() == 1:  # Simple class indices [batch_size]
-            # Create one-hot encoding
-            one_hot_labels = torch.zeros(batch_size, num_classes, device=self.device)
-            for i in range(batch_size):
-                one_hot_labels[i, labels[i]] = 1
-            class_labels = one_hot_labels
-            
-        elif labels.dim() == 2:
-            if labels.size(1) == 1:  # Class indices as [batch_size, 1]
-                # Create one-hot encoding
-                one_hot_labels = torch.zeros(batch_size, num_classes, device=self.device)
-                for i in range(batch_size):
-                    one_hot_labels[i, labels[i, 0]] = 1
-                class_labels = one_hot_labels
-                
-            elif labels.size(1) == num_classes:  # Already one-hot [batch_size, num_classes]
-                class_labels = labels
-                
-            else:  # Unexpected format, try to handle it
-                print(f"Warning: Unexpected label format in weak supervision loss: {labels.shape}")
-                # Default to first class
-                class_labels = torch.zeros(batch_size, num_classes, device=self.device)
-                class_labels[:, 0] = 1
-                
-        elif labels.dim() == 3:  # Segmentation masks [batch_size, H, W]
-            # Extract class labels from segmentation masks
-            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
-            for i in range(batch_size):
-                # Count occurrences of each class
-                flat_mask = labels[i].reshape(-1)
-                unique_classes, counts = torch.unique(flat_mask, return_counts=True)
-                
-                # Set 1 for classes that appear in the mask
-                for cls_idx, count in zip(unique_classes, counts):
-                    if cls_idx < num_classes and count > 0:
-                        class_labels[i, cls_idx] = 1
-                        
-                # If no valid classes found, use class 0
-                if class_labels[i].sum() == 0:
-                    class_labels[i, 0] = 1
-                    
-        elif labels.dim() == 4:  # One-hot segmentation masks [batch_size, C, H, W]
-            # Extract class presence from one-hot masks
-            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
-            for i in range(batch_size):
-                for c in range(min(labels.size(1), num_classes)):
-                    if torch.any(labels[i, c] > 0):
-                        class_labels[i, c] = 1
-                        
-                # If no valid classes found, use class 0
-                if class_labels[i].sum() == 0:
-                    class_labels[i, 0] = 1
-        else:
-            print(f"Error: Unsupported label format in weak supervision loss: {labels.shape}")
-            # Default to first class
-            class_labels = torch.zeros(batch_size, num_classes, device=self.device)
-            class_labels[:, 0] = 1
-        
-        # Now calculate Dice loss with properly formatted labels
-        for i in range(batch_size):
-            seg_map = segmentation_maps[i]
-            
-            # Get the target class indices (non-zero elements in class_labels)
-            target_indices = torch.nonzero(class_labels[i]).squeeze(1)
-            
-            # If no target indices, use class 0
-            if target_indices.numel() == 0:
-                target_indices = torch.tensor([0], device=self.device)
-            
-            # Calculate Dice loss for each target class
-            class_dice_loss = 0
-            for idx in target_indices:
-                # Create a binary mask for the target class
-                target_mask = torch.zeros_like(seg_map)
-                target_mask[idx] = 1
-                
-                # Calculate Dice loss for the target class
-                intersection = torch.sum(seg_map[idx] * target_mask[idx])
-                union = torch.sum(seg_map[idx]) + torch.sum(target_mask[idx])
-                dice_loss = 1 - (2 * intersection + 1e-6) / (union + 1e-6)
-                class_dice_loss += dice_loss
-            
-            # Average over target classes
-            loss += class_dice_loss / len(target_indices)
-=======
         for i in range(batch_size):
             # Get the segmentation map for the correct class
             seg_map = segmentation_maps[i, labels[i]]
@@ -326,7 +189,6 @@ class Trainer:
             # Calculate loss based on the segmentation map
             # This is a simple implementation - you might want to modify this
             loss += torch.mean(1 - seg_map)  # Encourage high values in the correct class regions
->>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
             
         return loss / batch_size
     
