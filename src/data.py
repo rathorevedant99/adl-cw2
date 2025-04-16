@@ -107,19 +107,25 @@ class PetDataset(Dataset):
         }
     
     def _create_split_files(self):
-        """Create train/val split files if they don't exist"""
-        # Check if split files already exist
-        if (self.root_dir / 'train.txt').exists() and (self.root_dir / 'val.txt').exists():
-            logging.info("Split files already exist, skipping creation")
+        """Create train/val split files if they don't exist or are empty"""
+        # Check if split files exist and are not empty
+        train_file = self.root_dir / 'train.txt'
+        val_file = self.root_dir / 'val.txt'
+        classes_file = self.root_dir / 'classes.txt'
+        
+        if (train_file.exists() and train_file.stat().st_size > 0 and 
+            val_file.exists() and val_file.stat().st_size > 0 and
+            classes_file.exists() and classes_file.stat().st_size > 0):
+            logging.info("Split files already exist and are not empty, skipping creation")
             return
             
         logging.info("Creating train/val split files")
         image_files = list(self.images_dir.glob('*.jpg'))
         image_names = [f.stem for f in image_files]
         
-        if not (self.root_dir / 'classes.txt').exists():
+        if not classes_file.exists() or classes_file.stat().st_size == 0:
             class_names = sorted(set(name.split('_')[0] for name in image_names))
-            with open(self.root_dir / 'classes.txt', 'w') as f:
+            with open(classes_file, 'w') as f:
                 for class_name in class_names:
                     f.write(f"{class_name}\n")
             logging.info(f"Created classes.txt with {len(class_names)} classes")
@@ -129,11 +135,11 @@ class PetDataset(Dataset):
         train_names = image_names[:split_idx]
         val_names = image_names[split_idx:]
         
-        with open(self.root_dir / 'train.txt', 'w') as f:
+        with open(train_file, 'w') as f:
             for name in train_names:
                 f.write(f"{name}\n")
                 
-        with open(self.root_dir / 'val.txt', 'w') as f:
+        with open(val_file, 'w') as f:
             for name in val_names:
                 f.write(f"{name}\n")
                 
