@@ -1,44 +1,13 @@
-# Core packages
-torch==2.6.0
-torchvision==0.21.0
-numpy==2.2.4
-scipy>=1.10.1
-pandas>=2.0.0
-matplotlib>=3.7.1
-seaborn>=0.12.2
-Pillow==11.1.0
-tqdm>=4.65.0
-scikit-learn>=1.2.2
-PyYAML==6.0.2
-requests>=2.28.2
-
-# For data augmentation and computer vision
-albumentations>=1.3.0
-opencv-python>=4.7.0
-scikit-image>=0.20.0
-
-# For advanced metrics and visualization
-tensorboard>=2.12.0
-pycocotools>=2.0.6
-
-# For interactive development
-notebook>=6.5.3
-ipywidgets>=8.0.6
-
-# For data collection APIs
-flickrapi>=2.4.0
-pycocotools>=2.0.6
-fiftyone>=0.18.0  # For visualizing and managing datasets
-
-# Dependencies for model evaluation
-medpy>=0.4.0  # For medical image processing metrics (includes Hausdorff distance)
-
-# Utility packages
 filelock==3.18.0
 fsspec==2025.3.2
 Jinja2==3.1.6
 MarkupSafe==3.0.2
 mpmath==1.3.0
 networkx==3.4.2
+numpy==2.2.4
+pillow==11.1.0
+PyYAML==6.0.2
 sympy==1.13.1
+torch==2.6.0
+torchvision==0.21.0
 typing_extensions==4.13.1

@@ -2,43 +2,28 @@
 
 This project implements a weakly-supervised neural network for semantic segmentation of pet images using the Oxford-IIIT Pet dataset. The implementation focuses on using image-level labels and/or bounding box annotations as weak supervision signals for training.
 
-## Overview
-
-The project implements a weakly-supervised segmentation approach using Class Activation Maps (CAM) and Region Growing for generating pseudo-masks. It supports both fully-supervised and weakly-supervised training, as well as integration of additional weakly-labeled data from external sources.
-
-### Key Features
-
-- **Weakly-supervised segmentation**: Train with image-level labels only
-- **Class Activation Mapping (CAM)**: Generate attention maps from classification networks
-- **Region Growing**: Refine initial attention maps into more precise segmentation masks
-- **Data collection interface**: Collect additional weakly-labeled data from external sources
-- **Comprehensive experiment framework**: Run ablation studies and parameter sweeps
+## Docs
+- kaiming_normal_: https://paperswithcode.com/method/he-initialization
+- Global Average Pooling: https://paperswithcode.com/method/global-average-pooling
+- Class Activation Mapping: https://zilliz.com/learn/class-activation-mapping-CAM
+- GradCAM: https://medium.com/@bmuskan007/grad-cam-a-beginners-guide-adf68e80f4bb
 
 ## Project Structure
 
 ```
 .
-├── data/                 # Dataset storage
-│   ├── oxford_pet/       # Main dataset
-│   └── additional/       # Additional weakly-labeled data
-├── experiments/          # Experiment results, checkpoints and logs
-├── src/                  # Source code
-│   ├── models/           # Neural network architectures
-│   │   └── segmentation_model.py  # Main segmentation model
-│   ├── training/         # Training loops and utilities
-│   │   ├── trainer.py    # Fully-supervised trainer
-│   │   ├── weakly_supervised_trainer.py  # Weakly-supervised trainer
-│   │   └── evaluator.py  # Model evaluation
-│   ├── experiments/      # Experiment utilities
-│   │   ├── experiment_runner.py   # Runs multiple experiments
-│   │   ├── result_analysis.py     # Analyzes experiment results
-│   │   └── generate_report.py     # Generates experiment reports
-│   ├── data.py           # Data loading and preprocessing
-│   └── data_collection.py  # External data collection utilities
-├── requirements.txt      # Project dependencies
-├── run.py               # Unified entry point
-├── config.yaml          # Configuration file
-└── README.md            # Project documentation
+├── data/             # Dataset storage and processing
+├── experiments/      # Checkpoints and logs
+├── src/              # Source code
+│   ├── models/       # Neural network architectures
+│   ├── data.py       # Data loading and preprocessing
+│   ├── training/     # Training loops and utilities
+│   └── utils/        # Helper functions
+├── experiments/      # Experiment configurations and results
+├── requirements.txt  # Project dependencies
+├── main.py           # Main entry point
+├── config.yaml       # Configuration file
+└── README.md         # Project documentation
 ```
 
 ## Setup
@@ -48,140 +33,31 @@ The project implements a weakly-supervised segmentation approach using Class Act
 python3.10 -m venv .env
 source .env/bin/activate
 ```
-
-2. Install dependencies:
+2. Upgrade pip:
+```bash
+pip install --upgrade pip
+```
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage Guide
+## Usage
 
-This project provides a comprehensive framework for weakly-supervised semantic segmentation with a unified command-line interface through `run.py`.
-
-### Configuration
-
-The system uses a YAML configuration file to control all aspects of training, evaluation, and experimentation:
-
+1. Edit the config file:
 ```bash
-# View or edit the configuration file
 vim config.yaml
 ```
 
-You can override any config parameter via command-line arguments.
-
-### Dataset Setup
-
+2. Train the model:
 ```bash
-# Download the Oxford-IIIT Pet dataset automatically
-python run.py --mode train --download --config config.yaml
-
-# If you have the dataset already, specify its location
-python run.py --mode train --config config.yaml
+python main.py --mode train --config config.yaml
 ```
 
-### Training Commands
-
-#### Basic Training
-
+3. Evaluate the model:
 ```bash
-# Fully-supervised training (with pixel-level annotations)
-python run.py --mode train --config config.yaml --device cuda --batch_size 32 --num_epochs 30
-
-# Weakly-supervised training (with image-level labels only)
-python run.py --mode train_weak --config config.yaml --device cuda --batch_size 32 --num_epochs 50
-```
-
-#### Training with Specific Parameters
-
-```bash
-# Adjusting learning rate and optimization parameters
-python run.py --mode train_weak --config config.yaml --learning_rate 0.0005 --weight_decay 0.00005
-
-# Configuring model parameters
-python run.py --mode train_weak --config config.yaml --cam_threshold 0.3 --region_growing_iterations 7
-
-# Adjusting loss weights
-python run.py --mode train_weak --config config.yaml --consistency_weight 1.5
-```
-
-#### Training with Additional Data
-
-```bash
-# Use additional weakly-labeled data
-python run.py --mode train_weak --config config.yaml --use_additional_data --additional_data_dir data/additional
-
-# Continue training from a checkpoint
-python run.py --mode train_weak --config config.yaml --checkpoint checkpoints/checkpoint_epoch_20.pth
-```
-
-### Evaluation Commands
-
-```bash
-# Basic evaluation on test set
-python run.py --mode eval --checkpoint final_model_weak.pth --eval_split test
-
-# Evaluation with visualization
-python run.py --mode eval --checkpoint final_model_weak.pth --eval_split test --visualize --save_predictions
-
-# Evaluation on validation set
-python run.py --mode eval --checkpoint final_model_weak.pth --eval_split val
-```
-
-### Data Collection Commands
-
-```bash
-# Collect data from Flickr
-python run.py --mode collect_data --flickr_key YOUR_KEY --flickr_secret YOUR_SECRET --max_per_source 200
-
-# Collect data from multiple sources
-python run.py --mode collect_data --flickr_key YOUR_KEY --flickr_secret YOUR_SECRET \
-                               --petfinder_key YOUR_KEY --petfinder_secret YOUR_SECRET
-
-# Specify output directory for collected data
-python run.py --mode collect_data --flickr_key YOUR_KEY --additional_data_dir custom/data/path
-```
-
-### Experiment Commands
-
-```bash
-# Run baseline experiments
-python run.py --mode experiment --config config.yaml --run_baseline
-
-# Run ablation studies
-python run.py --mode experiment --config config.yaml --run_ablation
-
-# Run comprehensive experiments
-python run.py --mode experiment --config config.yaml --run_baseline --run_ablation \
-                               --experiment_dir experiments/results_$(date +%Y%m%d)
-```
-
-### End-to-End Workflow Example
-
-Here's a complete workflow from data collection to evaluation:
-
-```bash
-# 1. Collect additional data
-python run.py --mode collect_data --flickr_key YOUR_KEY --flickr_secret YOUR_SECRET
-
-# 2. Train weakly-supervised model with additional data
-python run.py --mode train_weak --config config.yaml --use_additional_data \
-                              --num_epochs 50 --batch_size 32 --device cuda
-
-# 3. Evaluate the trained model
-python run.py --mode eval --checkpoint final_model_weak.pth --eval_split test --visualize
-
-# 4. Run experiments to compare different configurations
-python run.py --mode experiment --config config.yaml --run_ablation
-```
-
-## Command-Line Options
-
-The framework supports numerous command-line options. View all available options with:
-
-```bash
-python main.py --mode eval --checkpoint path/to/checkpoint.pth
+python main.py --mode eval --checkpoint checkpoint_name.pth
 ```
 
 ## License
-
 This project is licensed under the terms of the LICENSE file in the root directory.

@@ -38,7 +38,6 @@ class PetDataset(Dataset):
             
         self.images_dir = self.root_dir / 'images'
         self.annotations_dir = self.root_dir / 'annotations'
-        self.masks_dir = self.root_dir / 'annotations' / 'trimaps'
         
         self._create_split_files() # Create split files for train/val if they don't exist
         
@@ -62,37 +61,10 @@ class PetDataset(Dataset):
         image = self.transform(image)
         
         if not self.weak_supervision:
-            # For full supervision, use the trimap annotation
-            # The Oxford-IIIT Pet dataset uses trimaps where:
-            # 1 = pet, 2 = background, 3 = boundary
-            mask_path = self.masks_dir / f'{img_name}.png'
-            
-            # Check if mask exists, if not, try alternative naming
-            if not mask_path.exists():
-                # The dataset might use lowercase filenames for annotations
-                mask_path = self.masks_dir / f'{img_name.lower()}.png'
-            
-            # If still not found, search for any matching filename
-            if not mask_path.exists():
-                possible_masks = list(self.masks_dir.glob(f"*{img_name.split('_')[-1]}.png"))
-                if possible_masks:
-                    mask_path = possible_masks[0]
-                else:
-                    logging.warning(f"Mask not found for {img_name}, using weak supervision instead")
-                    # Fall back to weak supervision
-                    class_name = img_name.split('_')[0]
-                    class_idx = self.classes.index(class_name)
-                    return {
-                        'image': image,
-                        'mask': torch.tensor(class_idx),
-                        'image_name': img_name
-                    }
-            
+            mask_path = self.annotations_dir / f'{img_name}.png'
             mask = Image.open(mask_path)
             mask = T.Resize((224, 224))(mask)
             mask = torch.from_numpy(np.array(mask)).long()
-            # Convert trimap to binary mask (1 = pet, 0 = background/boundary)
-            mask = (mask == 1).long()
         else:
             # For weak supervision, we only use image-level labels
             # In this case, we'll use the class name from the image name
@@ -177,33 +149,21 @@ class PetDataset(Dataset):
         images_path.unlink()
         annotations_path.unlink()
         
-        # Ensure the directory structure is correct
+        # Move files to correct locations
         logging.info("Organizing dataset files...")
         images_dir = root_dir / "images"
         annotations_dir = root_dir / "annotations"
-        trimaps_dir = annotations_dir / "trimaps"
         
         # Create directories if they don't exist
         images_dir.mkdir(exist_ok=True)
         annotations_dir.mkdir(exist_ok=True)
-        trimaps_dir.mkdir(exist_ok=True)
         
-        # The Oxford-IIIT Pet dataset has a specific structure:
-        # - Images are in the root of the images.tar.gz
-        # - Annotations (trimaps) are in the annotations/trimaps directory
-        
-        # Check if files need to be moved (in case of a direct download)
-        if list((root_dir / "images").glob("*.jpg")):
-            # Move image files if they're in the wrong place
-            for img_path in (root_dir / "images").glob("*.jpg"):
-                if not (images_dir / img_path.name).exists():
-                    shutil.move(str(img_path), str(images_dir / img_path.name))
-        
-        # Make sure the trimap annotations are in the right place
-        if not list(trimaps_dir.glob("*.png")) and list(annotations_dir.glob("*.png")):
-            # Move trimap files to the correct subdirectory
-            for trimap_path in annotations_dir.glob("*.png"):
-                if not (trimaps_dir / trimap_path.name).exists():
-                    shutil.move(str(trimap_path), str(trimaps_dir / trimap_path.name))
-        
+        # Move image files
+        for img_path in (root_dir / "images").glob("*.jpg"):
+            shutil.move(str(img_path), str(images_dir / img_path.name))
+            
+        # Move annotation files
+        for ann_path in (root_dir / "annotations").glob("*.png"):
+            shutil.move(str(ann_path), str(annotations_dir / ann_path.name))
+            
         logging.info("Dataset download and organization completed")
