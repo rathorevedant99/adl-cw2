@@ -6,7 +6,7 @@ model:
   backbone: "resnet50"  # Backbone network for the segmentation model
 
 training:
-  batch_size: 32
+  batch_size: 256
   num_epochs: 30
   learning_rate: 0.001
   weight_decay: 0.0001
@@ -14,12 +14,14 @@ training:
   log_dir: "experiments/logs"
   log_interval: 10
   save_interval: 5
-  num_workers: 4
+  num_workers: 16
   device: "cuda" # cuda, mps, cpu
   seg_loss_weight: 0.1
+  pin_memory: true
+  amp: true
 
 evaluation:
-  batch_size: 32
+  batch_size: 128
   metrics: ["accuracy", "iou"]
-  num_workers: 4
+  num_workers: 8
   checkpoint_dir: "experiments/checkpoints"

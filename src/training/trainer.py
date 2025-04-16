@@ -4,8 +4,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from pathlib import Path
 import logging
-import datetime
-import os
+from torch.amp import autocast, GradScaler
 
 class Trainer:
     def __init__(self, model, dataset, config):
@@ -29,19 +28,24 @@ class Trainer:
         
         self.model = self.model.to(self.device)
         
-        # Setup data loader
+        # Enable CUDA optimizations if using CUDA
+        if self.device.type == 'cuda':
+            torch.backends.cudnn.benchmark = True
+        
+        # Setup data loader with pinned memory if enabled
         self.train_loader = DataLoader(
             dataset,
-            batch_size=config['batch_size'],
+            batch_size=config['training']['batch_size'],
             shuffle=True,
-            num_workers=config['num_workers']
+            num_workers=config['training']['num_workers'],
+            pin_memory=config['training'].get('pin_memory', False)
         )
         
         # Setup optimizer
         self.optimizer = optim.Adam(
             self.model.parameters(),
-            lr=config['learning_rate'],
-            weight_decay=config['weight_decay']
+            lr=config['training']['learning_rate'],
+            weight_decay=config['training']['weight_decay']
         )
         
         # Setup loss functions
@@ -52,6 +56,10 @@ class Trainer:
         
         self.seg_loss_weight = config['training']['seg_loss_weight']
         self.save_interval = config['training']['save_interval']
+        
+        # Setup automatic mixed precision
+        self.use_amp = config['training'].get('amp', False)
+        self.scaler = GradScaler() if self.use_amp else None
         
         logging.info(f"Training configuration: {self.config}")
         
@@ -65,23 +73,33 @@ class Trainer:
                 images = batch['image'].to(self.device)
                 labels = batch['mask'].to(self.device)
                 
-                outputs = self.model(images) # Forward pass
-                logits = outputs['logits'] # Required for classification loss
-                segmentation_maps = outputs['segmentation_maps'] # Required for segmentation loss
-                
-                # Calculate classification loss
-                cls_loss = self.cls_criterion(logits, labels)
-                
-                # Calculate weak supervision loss
-                seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
-                
-                # Total loss
-                loss = cls_loss + self.seg_loss_weight * seg_loss
-                
-                # Backward pass
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                # Use automatic mixed precision if enabled
+                if self.use_amp:
+                    with autocast(device_type=self.device.type):
+                        outputs = self.model(images)
+                        logits = outputs['logits']
+                        segmentation_maps = outputs['segmentation_maps']
+                        
+                        cls_loss = self.cls_criterion(logits, labels)
+                        seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
+                        loss = cls_loss + self.seg_loss_weight * seg_loss
+                    
+                    self.optimizer.zero_grad()
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    outputs = self.model(images)
+                    logits = outputs['logits']
+                    segmentation_maps = outputs['segmentation_maps']
+                    
+                    cls_loss = self.cls_criterion(logits, labels)
+                    seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
+                    loss = cls_loss + self.seg_loss_weight * seg_loss
+                    
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
                 
                 epoch_loss += loss.item()
                 

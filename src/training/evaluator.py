@@ -7,6 +7,7 @@ import random
 import logging
 from PIL import Image, ImageDraw
 import torchvision.transforms as T
+from torch.amp import autocast
 
 class Evaluator:
     def __init__(self, model, dataset, config):
@@ -30,17 +31,25 @@ class Evaluator:
         
         self.model = self.model.to(self.device)
         
+        # Enable CUDA optimizations if using CUDA
+        if self.device.type == 'cuda':
+            torch.backends.cudnn.benchmark = True
+        
         # Setup data loader
         self.eval_loader = DataLoader(
             dataset,
             batch_size=config['evaluation']['batch_size'],
             shuffle=False,
-            num_workers=config['evaluation']['num_workers']
+            num_workers=config['evaluation']['num_workers'],
+            pin_memory=config['training'].get('pin_memory', False)
         )
         
         # Setup visualization directory
         self.viz_dir = Path(config.get('viz_dir', 'experiments/visualizations'))
         self.viz_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Setup automatic mixed precision
+        self.use_amp = config['training'].get('amp', False)
         
     def evaluate(self):
         self.model.eval()
@@ -60,10 +69,16 @@ class Evaluator:
                 images = batch['image'].to(self.device)
                 labels = batch['mask'].to(self.device)
                 
-                # Forward pass
-                outputs = self.model(images)
-                logits = outputs['logits']
-                segmentation_maps = outputs['segmentation_maps']
+                # Forward pass with automatic mixed precision if enabled
+                if self.use_amp:
+                    with autocast():
+                        outputs = self.model(images)
+                        logits = outputs['logits']
+                        segmentation_maps = outputs['segmentation_maps']
+                else:
+                    outputs = self.model(images)
+                    logits = outputs['logits']
+                    segmentation_maps = outputs['segmentation_maps']
                 
                 # Get predictions
                 cls_preds = torch.argmax(logits, dim=1)

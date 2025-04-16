@@ -5,11 +5,14 @@ from pathlib import Path
 import logging
 import sys
 import datetime
+import torchvision.transforms as T
+from torch.utils.data import ConcatDataset
 
 from src.models.segmentation_model import WeaklySupervisedSegmentationModel
 from src.data import PetDataset
 from src.training.trainer import Trainer
 from src.training.evaluator import Evaluator
+from src.augment import AugmentedDataset
 
 
 def setup_logging(config):
@@ -80,14 +83,37 @@ def main():
         PetDataset.download_dataset(config['data']['root_dir'])
         logger.info("Dataset download completed")
     
-    # Initialize dataset
+    # Create basic transform pipeline
+    transform = T.Compose([
+        T.Resize((224, 224)),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406],
+                   std=[0.229, 0.224, 0.225])
+    ])
+    
+    # Initialize dataset with basic transforms
     logger.info("Initializing dataset...")
-    dataset = PetDataset(
+    original_dataset = PetDataset(
         root_dir=config['data']['root_dir'],
         split='train' if args.mode == 'train' else 'val',
-        weak_supervision=True
+        weak_supervision=True,
+        transform=transform
     )
-    logger.info(f"Dataset initialized with {len(dataset)} samples")
+    
+    # For training, create augmented dataset and combine with original
+    if args.mode == 'train':
+        logger.info("Creating augmented dataset...")
+        augmented_dataset = AugmentedDataset(original_dataset)
+        augmented_dataset._build_augmented_indices()  # Build list of actually augmented images
+        
+        logger.info("Saving sample pairs of original and augmented images...")
+        augmented_dataset.save_sample_pairs(num_samples=5, save_dir=Path(config['training']['log_dir']) / 'augmentation_samples')
+        
+        dataset = ConcatDataset([original_dataset, augmented_dataset])
+        logger.info(f"Combined dataset size: {len(dataset)} samples (original: {len(original_dataset)}, augmented: {len(augmented_dataset)})")
+    else:
+        dataset = original_dataset
+        logger.info(f"Evaluation dataset size: {len(dataset)} samples")
     
     # Initialize model
     logger.info("Initializing model...")
