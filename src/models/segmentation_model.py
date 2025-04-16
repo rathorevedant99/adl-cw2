@@ -168,155 +168,16 @@ class WeaklySupervisedSegmentationModel(nn.Module):
         # Generate class-specific maps (CAM)
         class_features = self.classifier(x)
         
-        # Apply ReLU to ensure non-negative values
-        cam = F.relu(class_features)
+        pooled = self.gap(cam) # Applies global average pooling to the class activation maps
+        pooled = pooled.view(pooled.size(0), -1) # Flattens the class activation maps
         
-        # For classification logits
-        pooled = self.gap(cam)
-        logits = pooled.view(pooled.size(0), -1)
-        
-        # Apply region growing if in training mode or explicitly requested
-        if is_training or labels is not None:
-            # Generate initial segmentation maps from CAM
-            cam_upsampled = F.interpolate(
-                cam,
-                size=input_size,
-                mode='bilinear',
-                align_corners=False
-            )
-            
-            # Apply region growing algorithm
-            refined_maps = self._region_growing(cam_upsampled, features, labels, bbox)
-            
-            # Apply consistency constraints
-            consistency_maps = self._apply_consistency_constraints(refined_maps, features, input_size)
-            
-            # Boundary refinement using encoder-decoder features
-            final_features = torch.cat([x, consistency_maps], dim=1)
-            refined_segmentation = self.boundary_refine(final_features)
-            
-            segmentation_maps = F.interpolate(
-                refined_segmentation,
-                size=input_size,
-                mode='bilinear',
-                align_corners=False
-            )
-        else:
-            # For inference, just use the segmentation output
-            segmentation_maps = self.outc(x)
-            segmentation_maps = F.interpolate(
-                segmentation_maps,
-                size=input_size,
-                mode='bilinear',
-                align_corners=False
-            )
-        
-        outputs = {
-            'logits': logits,
-            'segmentation_maps': segmentation_maps,
-            'cam_maps': cam
-        }
-        
-        # Add multi-scale features and intermediate results if in training mode
-        if is_training:
-            outputs['features'] = features
-        
-        return outputs
-    
-    def get_cam_maps(self, x, target_class, apply_region_growing=False):
-        """Get Class Activation Maps for a specific class with optional region growing"""
-        # Store features for region growing if needed
-        features = {}
-        
-        # Encoder path
-        x1 = self.inc(x)
-        features['enc1'] = x1
-        
-        x2 = self.down1(x1)
-        features['enc2'] = x2
-        
-        x3 = self.down2(x2)
-        features['enc3'] = x3
-        
-        x4 = self.down3(x3)
-        features['enc4'] = x4
-        
-        x5 = self.down4(x4)
-        features['enc5'] = x5
-        
-        # Decoder path
-        x = self.up1(x5, x4)
-        features['dec1'] = x
-        
-        x = self.up2(x, x3)
-        features['dec2'] = x
-        
-        x = self.up3(x, x2)
-        features['dec3'] = x
-        
-        x = self.up4(x, x1)
-        features['dec4'] = x
-        
-        # Generate class-specific maps
-        cam = self.classifier(x)
-        
-        # Select target class
-        cam = cam[:, target_class:target_class+1]
-        
-        # Apply ReLU and normalize
-        cam = F.relu(cam)
-        cam = cam / (cam.max() + 1e-8)
-        
-        # Upsample to input size
-        input_size = x1.shape[2:]
-        cam_upsampled = F.interpolate(
+        # Generate segmentation maps
+        segmentation_maps = F.interpolate(
             cam,
-            size=input_size,
+            size=x.shape[2:],
             mode='bilinear',
             align_corners=False
         )
-        
-        if apply_region_growing:
-            # Create a one-hot label for the target class
-            labels = torch.zeros(x.shape[0], self.num_classes, device=x.device)
-            labels[:, target_class] = 1.0
-            
-            # Apply region growing to refine the CAM
-            refined_cam = self._region_growing(cam_upsampled, features, labels)
-            return refined_cam
-        
-        return cam_upsampled
-        
-    def _region_growing(self, cam_maps, features, labels=None, bbox=None):
-        """Apply region growing algorithm to refine CAM maps
-        
-        Args:
-            cam_maps: Initial CAM maps [B, C, H, W]
-            features: Dictionary of encoder-decoder features
-            labels: One-hot encoded class labels [B, C]
-            bbox: Optional bounding box coordinates [B, 4] (x1, y1, x2, y2)
-            
-        Returns:
-            Refined segmentation maps
-        """
-        import logging
-        logging.info("Starting region growing algorithm")
-        
-        batch_size, num_classes, height, width = cam_maps.shape
-        device = cam_maps.device
-        
-        # Extract multi-scale features for region growing
-        logging.info("Extracting multi-scale features")
-        dec2_features = self.feature_proj1(features['dec2'])
-        dec3_features = self.feature_proj2(features['dec3'])
-        
-        # Upsample all features to the same resolution
-        dec2_upsampled = F.interpolate(dec2_features, size=(height, width), mode='bilinear', align_corners=False)
-        dec3_upsampled = F.interpolate(dec3_features, size=(height, width), mode='bilinear', align_corners=False)
-        
-        # Initialize masks with thresholded CAM
-        logging.info("Initializing masks with thresholded CAM")
-        refined_masks = (cam_maps > self.cam_threshold).float()
         
         # Apply bounding box constraints if provided
         if bbox is not None:

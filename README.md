@@ -179,48 +179,8 @@ python run.py --mode experiment --config config.yaml --run_ablation
 The framework supports numerous command-line options. View all available options with:
 
 ```bash
-python run.py --help
+python main.py --mode eval --checkpoint path/to/checkpoint.pth
 ```
-
-### Common Options
-
-| Option | Description | Default |
-|--------|-------------|--------|
-| `--mode` | Operation mode (train, train_weak, eval, collect_data, experiment) | Required |
-| `--config` | Path to configuration file | config.yaml |
-| `--device` | Computing device (cuda, mps, cpu) | From config |
-| `--checkpoint` | Path to model checkpoint for evaluation/continued training | None |
-| `--download` | Download the Oxford-IIIT Pet dataset if not present | False |
-| `--output_dir` | Directory to save outputs | From config |
-| `--batch_size` | Batch size for training/evaluation | From config |
-| `--num_epochs` | Number of training epochs | From config |
-| `--learning_rate` | Learning rate | From config |
-
-### Model-Specific Options
-
-| Option | Description | Default |
-|--------|-------------|--------|
-| `--base_filters` | Number of base filters in U-Net | From config |
-| `--cam_threshold` | Threshold for class activation maps | From config |
-| `--region_growing_iterations` | Number of region growing iterations | From config |
-
-### Weakly-Supervised Options
-
-| Option | Description | Default |
-|--------|-------------|--------|
-| `--use_additional_data` | Use additional weakly-labeled data | False |
-| `--additional_data_dir` | Path to additional data | data/additional |
-| `--consistency_weight` | Weight for consistency loss | From config |
-| `--curriculum_learning` | Enable curriculum learning | From config |
-| `--generate_pseudo_labels` | Generate pseudo labels during training | From config |
-
-### Evaluation Options
-
-| Option | Description | Default |
-|--------|-------------|--------|
-| `--eval_split` | Dataset split to evaluate on (train, val, test) | test |
-| `--save_predictions` | Save model predictions | False |
-| `--visualize` | Visualize model predictions | False |
 
 ## License
 

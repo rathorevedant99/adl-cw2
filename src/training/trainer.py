@@ -35,24 +35,26 @@ class Trainer:
         # Setup data loader
         self.train_loader = DataLoader(
             dataset,
-            batch_size=config['training']['batch_size'],
+            batch_size=config['batch_size'],
             shuffle=True,
-            num_workers=config['training']['num_workers']
+            num_workers=config['num_workers']
         )
         
         # Setup optimizer
         self.optimizer = optim.Adam(
             self.model.parameters(),
-            lr=config['training']['learning_rate'],
-            weight_decay=config['training']['weight_decay']
+            lr=config['learning_rate'],
+            weight_decay=config['weight_decay']
         )
         
         # Setup loss functions
         self.cls_criterion = nn.CrossEntropyLoss()
             
-        self.checkpoint_dir = Path(config['training']['checkpoint_dir'])
-        self.log_dir = Path(config['training']['log_dir'])
+        # Setup checkpoint directory
+        self.checkpoint_dir = Path(config['checkpoint_dir'])
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
+<<<<<<< HEAD
         self.seg_loss_weight = config['training']['seg_loss_weight']
         
         # Handle both save_interval (old) and save_frequency (new) parameter names
@@ -63,10 +65,22 @@ class Trainer:
         else:
             self.save_interval = 5  # Default value
             logging.warning("Neither save_frequency nor save_interval found in config, using default value of 5")
+=======
+        # Setup log directory
+        self.log_dir = Path(config['log_dir'])
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+>>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
         
-        logging.debug(f"Training configuration: {self.config}")
+        # Setup loss weights
+        self.seg_loss_weight = config.get('seg_loss_weight', 0.1)
+        
+        # Setup save interval
+        self.save_interval = config.get('save_interval', 5)
+        
+        logging.info(f"Training configuration: {self.config}")
         
     def train(self):
+<<<<<<< HEAD
         # Initialize history dictionary to track metrics
         history = {
             'loss': [],
@@ -81,11 +95,15 @@ class Trainer:
         num_epochs = self.config['training']['num_epochs']
         
         for epoch in range(num_epochs):
+=======
+        for epoch in range(self.config['num_epochs']):
+>>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
             self.model.train()
             epoch_loss = 0
             epoch_cls_loss = 0
             epoch_seg_loss = 0
             
+<<<<<<< HEAD
             logging.info(f'Epoch {epoch+1}/{num_epochs}')
             
             # Create progress bar for batches
@@ -102,6 +120,12 @@ class Trainer:
                     images, labels = batch
                     images = images.to(self.device)
                     labels = labels.to(self.device)
+=======
+            logging.info(f'Epoch {epoch+1}/{self.config["num_epochs"]}')
+            for batch_idx, batch in enumerate(self.train_loader):
+                images = batch['image'].to(self.device)
+                labels = batch['mask'].to(self.device)
+>>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
                 
                 # Add debug logging for the first batch
                 if epoch == 0 and batch_idx == 0:
@@ -208,6 +232,7 @@ class Trainer:
         num_classes = segmentation_maps.size(1)
         loss = 0
         
+<<<<<<< HEAD
         # Handle different label formats
         if labels.dim() == 1:  # Simple class indices [batch_size]
             # Create one-hot encoding
@@ -293,6 +318,15 @@ class Trainer:
             
             # Average over target classes
             loss += class_dice_loss / len(target_indices)
+=======
+        for i in range(batch_size):
+            # Get the segmentation map for the correct class
+            seg_map = segmentation_maps[i, labels[i]]
+            
+            # Calculate loss based on the segmentation map
+            # This is a simple implementation - you might want to modify this
+            loss += torch.mean(1 - seg_map)  # Encourage high values in the correct class regions
+>>>>>>> parent of e95ffbd (Merge pull request #4 from rathorevedant99/vedant-dev)
             
         return loss / batch_size
     

@@ -40,55 +40,23 @@ data_collection:
 
 # Model Configuration
 model:
-  num_classes: 35  # Number of pet breeds in the Oxford-IIIT Pet dataset
-  architecture: "unet"  # Base architecture type: unet only
-  
-  # U-Net parameters
-  base_filters: 64  # Number of filters in the first layer (doubles with each depth)
-  depth: 5  # U-Net depth (number of downsampling operations)
-  dropout_rate: 0.2  # Dropout rate for regularization
-  
-  # Weakly-supervised segmentation parameters
-  cam_threshold: 0.2  # Threshold for class activation maps
-  region_growing_iterations: 5  # Number of iterations for region growing
-  boundary_refinement: true  # Enable boundary refinement module
-  multi_scale_fusion: true  # Enable multi-scale feature fusion
+  num_classes: 37  # Number of pet breeds in the Oxford-IIIT Pet dataset
+  backbone: "resnet50"  # Backbone network for the segmentation model
 
-# Training Configuration
 training:
-  # Basic training parameters
-  batch_size: 32
-  num_epochs: 30
+  batch_size: 16
+  num_epochs: 2  # Reduced for testing
   learning_rate: 0.001
   weight_decay: 0.0001
-  optimizer: "adam"  # Options: adam, sgd, adamw
-  scheduler: "cosine"  # Options: step, cosine, plateau
-  step_size: 10  # For step scheduler
-  gamma: 0.1  # For step scheduler
-  
-  # Directories and logging
+  save_dir: "experiments/checkpoints"
   checkpoint_dir: "experiments/checkpoints"
   log_dir: "experiments/logs"
-  log_interval: 10  # Log every N batches
-  save_frequency: 5  # Save checkpoint every N epochs
+  log_interval: 10
+  save_interval: 1  # Save checkpoint every epoch for testing
   num_workers: 4
-  device: "cuda"  # cuda, mps, cpu
-  
-  # Loss weights and components
-  seg_loss_weight: 0.1  # Weight for segmentation loss
-  cls_loss_weight: 1.0  # Weight for classification loss
-  boundary_loss_weight: 0.05  # Weight for boundary refinement loss
-  size_constraint_weight: 0.05  # Weight for size constraint loss
-  
-  # Weakly-supervised training options
-  generate_pseudo_labels: true  # Generate pseudo labels during training
-  pseudo_label_update_frequency: 5  # Update pseudo labels every N epochs
-  consistency_weight: 1.0  # Weight for consistency loss
-  curriculum_learning: true  # Use curriculum learning strategy
-  curriculum_steps: [5, 15, 25]  # Epochs to change curriculum difficulty
-  strong_augment: true  # Use strong augmentation for consistency
+  device: "mps" # cuda, mps, cpu
+  seg_loss_weight: 0.1
 
-# Evaluation Configuration
 evaluation:
   batch_size: 32
   metrics: ["accuracy", "mean_iou", "pixel_accuracy", "dice", "boundary_f1"]
