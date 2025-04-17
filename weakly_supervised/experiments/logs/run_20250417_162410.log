@@ -1,0 +1,57 @@
+2025-04-17 16:24:10,883 - root - INFO - Starting pipeline
+2025-04-17 16:24:10,883 - root - INFO - Mode: train
+2025-04-17 16:24:12,579 - root - INFO - Using device: cuda
+2025-04-17 16:24:12,579 - root - INFO - Initializing dataset...
+2025-04-17 16:24:12,579 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-17 16:24:12,579 - root - INFO - Split files already exist, skipping creation
+2025-04-17 16:24:12,579 - root - INFO - Dataset initialized with 5912 images and 35 classes
+2025-04-17 16:24:12,579 - root - INFO - Dataset initialized with 5912 samples
+2025-04-17 16:24:12,579 - root - INFO - Initializing model...
+2025-04-17 16:24:13,399 - root - INFO - Model initialized
+2025-04-17 16:24:13,403 - root - INFO - Starting training...
+2025-04-17 16:24:13,403 - root - INFO - Using device: cuda
+2025-04-17 16:24:13,403 - root - INFO - Epoch 1/30
+2025-04-17 16:24:23,887 - root - INFO - Batch 0/185, Loss: 7.0635
+2025-04-17 16:24:27,792 - root - INFO - Batch 10/185, Loss: 4.2250
+2025-04-17 16:24:31,696 - root - INFO - Batch 20/185, Loss: 3.1630
+2025-04-17 16:24:35,601 - root - INFO - Batch 30/185, Loss: 0.4977
+2025-04-17 16:24:39,508 - root - INFO - Batch 40/185, Loss: 0.3741
+2025-04-17 16:24:43,418 - root - INFO - Batch 50/185, Loss: 0.2386
+2025-04-17 16:24:47,327 - root - INFO - Batch 60/185, Loss: 0.1139
+2025-04-17 16:24:51,233 - root - INFO - Batch 70/185, Loss: -0.0421
+2025-04-17 16:24:55,141 - root - INFO - Batch 80/185, Loss: 0.6715
+2025-04-17 16:24:59,045 - root - INFO - Batch 90/185, Loss: -0.2293
+2025-04-17 16:25:02,953 - root - INFO - Batch 100/185, Loss: 0.0425
+2025-04-17 16:25:06,859 - root - INFO - Batch 110/185, Loss: 0.5780
+2025-04-17 16:25:10,768 - root - INFO - Batch 120/185, Loss: 0.1808
+2025-04-17 16:25:14,672 - root - INFO - Batch 130/185, Loss: 0.1843
+2025-04-17 16:25:18,575 - root - INFO - Batch 140/185, Loss: -0.0988
+2025-04-17 16:25:22,483 - root - INFO - Batch 150/185, Loss: 0.1163
+2025-04-17 16:25:26,390 - root - INFO - Batch 160/185, Loss: -0.3854
+2025-04-17 16:25:30,288 - root - INFO - Batch 170/185, Loss: 0.6204
+2025-04-17 16:25:34,200 - root - INFO - Batch 180/185, Loss: 0.2955
+2025-04-17 16:25:36,151 - root - INFO - Epoch 1 completed. Average loss: 0.9271
+2025-04-17 16:25:36,151 - root - INFO - Epoch 2/30
+2025-04-17 16:25:46,713 - root - INFO - Batch 0/185, Loss: -0.1609
+2025-04-17 16:25:50,611 - root - INFO - Batch 10/185, Loss: 0.1763
+2025-04-17 16:25:54,513 - root - INFO - Batch 20/185, Loss: 0.6183
+2025-04-17 16:25:58,423 - root - INFO - Batch 30/185, Loss: 0.2615
+2025-04-17 16:26:02,329 - root - INFO - Batch 40/185, Loss: 0.3679
+2025-04-17 16:26:06,238 - root - INFO - Batch 50/185, Loss: 0.0276
+2025-04-17 16:26:10,143 - root - INFO - Batch 60/185, Loss: -0.1613
+2025-04-17 16:26:14,047 - root - INFO - Batch 70/185, Loss: 0.5646
+2025-04-17 16:26:17,953 - root - INFO - Batch 80/185, Loss: 0.0065
+2025-04-17 16:26:21,857 - root - INFO - Batch 90/185, Loss: 0.0796
+2025-04-17 16:26:25,762 - root - INFO - Batch 100/185, Loss: -0.0328
+2025-04-17 16:26:29,670 - root - INFO - Batch 110/185, Loss: -0.1658
+2025-04-17 16:26:33,575 - root - INFO - Batch 120/185, Loss: 0.4125
+2025-04-17 16:26:37,482 - root - INFO - Batch 130/185, Loss: 0.6771
+2025-04-17 16:26:41,391 - root - INFO - Batch 140/185, Loss: -0.2774
+2025-04-17 16:26:45,298 - root - INFO - Batch 150/185, Loss: 0.6450
+2025-04-17 16:26:49,209 - root - INFO - Batch 160/185, Loss: 0.0934
+2025-04-17 16:26:53,116 - root - INFO - Batch 170/185, Loss: 0.9452
+2025-04-17 16:26:57,023 - root - INFO - Batch 180/185, Loss: 0.6480
+2025-04-17 16:26:58,917 - root - INFO - Epoch 2 completed. Average loss: 0.2766
+2025-04-17 16:26:58,917 - root - INFO - Epoch 3/30
+2025-04-17 16:27:09,253 - root - INFO - Batch 0/185, Loss: 0.7121
+2025-04-17 16:27:13,153 - root - INFO - Batch 10/185, Loss: 0.9886

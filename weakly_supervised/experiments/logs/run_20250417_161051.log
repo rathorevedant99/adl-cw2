@@ -1,0 +1,14 @@
+2025-04-17 16:10:51,727 - root - INFO - Starting pipeline
+2025-04-17 16:10:51,727 - root - INFO - Mode: train
+2025-04-17 16:10:53,433 - root - INFO - Using device: cuda
+2025-04-17 16:10:53,433 - root - INFO - Initializing dataset...
+2025-04-17 16:10:53,436 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-17 16:10:53,436 - root - INFO - Split files already exist, skipping creation
+2025-04-17 16:10:53,436 - root - INFO - Dataset initialized with 5912 images and 35 classes
+2025-04-17 16:10:53,436 - root - INFO - Dataset initialized with 5912 samples
+2025-04-17 16:10:53,436 - root - INFO - Initializing model...
+2025-04-17 16:10:54,331 - root - INFO - Model initialized
+2025-04-17 16:10:54,333 - root - INFO - Starting training...
+2025-04-17 16:10:54,333 - root - INFO - Using device: cuda
+2025-04-17 16:10:54,338 - root - INFO - Epoch 1/30
+2025-04-17 16:11:03,707 - root - INFO - Batch 0/185, Loss: 7.6418
