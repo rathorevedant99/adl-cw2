@@ -1,0 +1,25 @@
+data:
+  root_dir: "data/oxford_pet"
+
+model:
+  num_classes: 35  # Number of pet breeds in the Oxford-IIIT Pet dataset
+  backbone: "resnet50"  # Backbone network for the segmentation model
+
+training:
+  batch_size: 32
+  num_epochs: 30
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  checkpoint_dir: "experiments/checkpoints"
+  log_dir: "experiments/logs"
+  log_interval: 10
+  save_interval: 5
+  num_workers: 4
+  device: "cuda" # cuda, mps, cpu
+  seg_loss_weight: 0.1
+
+evaluation:
+  batch_size: 32
+  metrics: ["accuracy", "iou"]
+  num_workers: 4
+  checkpoint_dir: "experiments/checkpoints"

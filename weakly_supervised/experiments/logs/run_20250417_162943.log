@@ -1,0 +1,35 @@
+2025-04-17 16:29:43,979 - root - INFO - Starting pipeline
+2025-04-17 16:29:43,981 - root - INFO - Mode: train
+2025-04-17 16:29:45,676 - root - INFO - Using device: cuda
+2025-04-17 16:29:45,676 - root - INFO - Initializing dataset...
+2025-04-17 16:29:45,676 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-17 16:29:45,676 - root - INFO - Split files already exist, skipping creation
+2025-04-17 16:29:45,677 - root - INFO - Dataset initialized with 5912 images and 35 classes
+2025-04-17 16:29:45,677 - root - INFO - Dataset initialized with 5912 samples
+2025-04-17 16:29:45,677 - root - INFO - Initializing model...
+2025-04-17 16:29:46,588 - root - INFO - Model initialized
+2025-04-17 16:29:46,588 - root - INFO - Starting training...
+2025-04-17 16:29:46,588 - root - INFO - Using device: cuda
+2025-04-17 16:29:46,593 - root - INFO - Epoch 1/30
+2025-04-17 16:29:56,334 - root - INFO - Label shape: torch.Size([32])
+2025-04-17 16:29:56,334 - root - INFO - Label data type: torch.int64
+2025-04-17 16:29:56,360 - root - INFO - Label values: tensor([ 7, 13,  8, 12, 28, 12,  2,  8, 11, 11, 17, 30,  8, 30, 33,  9, 14, 32,
+        25, 14, 33,  0, 20, 27,  8,  9, 33, 20, 24,  4, 23,  8],
+       device='cuda:0')
+2025-04-17 16:29:56,360 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-17 16:29:57,045 - root - INFO - Batch 0/185, Loss: 9.2533
+2025-04-17 16:29:57,054 - root - INFO - Label shape: torch.Size([32])
+2025-04-17 16:29:57,054 - root - INFO - Label data type: torch.int64
+2025-04-17 16:29:57,054 - root - INFO - Label values: tensor([27, 32, 13, 33, 29, 12, 17,  9,  9,  0, 33, 14, 11, 18,  6,  5, 10, 21,
+        13,  3, 12,  1, 25,  8,  4, 30, 12,  7, 17, 17, 25, 10],
+       device='cuda:0')
+2025-04-17 16:29:57,054 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-17 16:30:01,496 - root - INFO - Batch 10/185, Loss: 3.6327
+2025-04-17 16:30:05,949 - root - INFO - Batch 20/185, Loss: 0.8611
+2025-04-17 16:30:10,400 - root - INFO - Batch 30/185, Loss: 0.6217
+2025-04-17 16:30:14,851 - root - INFO - Batch 40/185, Loss: 0.1943
+2025-04-17 16:30:19,301 - root - INFO - Batch 50/185, Loss: 0.1273
+2025-04-17 16:30:23,766 - root - INFO - Batch 60/185, Loss: -0.2502
+2025-04-17 16:30:28,247 - root - INFO - Batch 70/185, Loss: 0.2191
+2025-04-17 16:30:32,714 - root - INFO - Batch 80/185, Loss: 0.7212
+2025-04-17 16:30:37,177 - root - INFO - Batch 90/185, Loss: 1.0489
