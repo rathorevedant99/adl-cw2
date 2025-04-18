@@ -2,22 +2,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50, ResNet50_Weights
-class WeaklySupervisedSegmentationModel(nn.Module):
-    def __init__(self, num_classes, backbone='resnet50', cam_threshold=0.1, region_growing_iterations=5):
+class WeaklySupervisedSegmentationModelResNet50(nn.Module):
+    def __init__(self, num_classes, cam_threshold=0.1, region_growing_iterations=5):
         super().__init__()
         self.num_classes = num_classes
         self.cam_threshold = cam_threshold
         self.region_growing_iterations = region_growing_iterations
 
-        if backbone == 'resnet50':
-            resnet = resnet50(weights=ResNet50_Weights.DEFAULT)
-            self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
-            self.layer1 = resnet.layer1
-            self.layer2 = resnet.layer2
-            self.layer3 = resnet.layer3  # Used for region growing features
-            self.layer4 = resnet.layer4
-        else:
-            raise ValueError(f"Unsupported backbone: {backbone}")
+        resnet = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
+        self.layer1 = resnet.layer1
+        self.layer2 = resnet.layer2
+        self.layer3 = resnet.layer3  # Used for region growing features
+        self.layer4 = resnet.layer4
+       
 
         self.class_specific = nn.Conv2d(2048, num_classes, kernel_size=1)
         self.gap = nn.AdaptiveAvgPool2d(1)

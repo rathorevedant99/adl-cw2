@@ -8,7 +8,8 @@ import datetime
 import torchvision.transforms as T
 from torch.utils.data import ConcatDataset
 
-from src.models.segmentation_model import WeaklySupervisedSegmentationModel
+from src.models.segmentation_model_resnet50 import WeaklySupervisedSegmentationModelResNet50
+from src.models.segmentation_model_unet import WeaklySupervisedSegmentationModelUNet
 from src.data import PetDataset
 from src.training.trainer import Trainer
 from src.training.evaluator import Evaluator
@@ -117,10 +118,16 @@ def main():
     
     # Initialize model
     logger.info("Initializing model...")
-    model = WeaklySupervisedSegmentationModel(
-        num_classes=config['model']['num_classes'],
-        backbone=config['model']['backbone']
-    ).to(device)
+    if config['model']['backbone'] == 'resnet50':
+        model = WeaklySupervisedSegmentationModelResNet50(
+            num_classes=config['model']['num_classes'],
+        ).to(device)
+    elif config['model']['backbone'] == 'unet':
+        model = WeaklySupervisedSegmentationModelUNet(
+            num_classes=config['model']['num_classes'],
+        ).to(device)
+    else:
+        raise ValueError(f"Unsupported backbone: {config['model']['backbone']}")
     logger.info("Model initialized")
     
     if args.mode == 'train':

@@ -3,7 +3,7 @@ data:
 
 model:
   num_classes: 35  # Number of pet breeds in the Oxford-IIIT Pet dataset
-  backbone: "resnet50"  # Backbone network for the segmentation model
+  backbone: "resnet50"  # Backbone network for the segmentation model (unet, resnet50)
 
 training:
   batch_size: 64
