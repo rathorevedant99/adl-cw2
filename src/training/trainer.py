@@ -5,7 +5,8 @@ from torch.utils.data import DataLoader
 from pathlib import Path
 import logging
 import os
-import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
 class Trainer:
     def __init__(self, model, dataset, config):

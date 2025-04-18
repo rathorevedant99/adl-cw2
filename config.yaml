@@ -7,7 +7,7 @@ model:
 
 training:
   batch_size: 64
-  num_epochs: 3
+  num_epochs: 1
   learning_rate: 0.001
   weight_decay: 0.0001
   checkpoint_dir: "experiments/checkpoints"
