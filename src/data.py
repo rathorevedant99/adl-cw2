@@ -22,33 +22,36 @@ class PetDataset(Dataset):
         self.split = split
         self.weak_supervision = weak_supervision
         self.test_split = test_split
-        
+
         logging.info(f"Initializing {split} dataset with weak_supervision={weak_supervision}")
-        
+
         # Default transforms
         if transform is None:
             self.transform = T.Compose([
                 T.Resize((224, 224)),
                 T.ToTensor(),
                 T.Normalize(mean=[0.485, 0.456, 0.406],
-                           std=[0.229, 0.224, 0.225])
+                            std=[0.229, 0.224, 0.225])
             ])
         else:
             self.transform = transform
-            
+
         self.images_dir = self.root_dir / 'images'
         self.annotations_dir = self.root_dir / 'annotations'
-        
-        self._create_split_files() # Create split files for train/val if they don't exist
-        
+
+        # Ensure valid split
         split_file = self.root_dir / f'{split}.txt'
+        if not split_file.exists():
+            raise ValueError(f"Invalid split name '{split}'. Expected one of ['train', 'val', 'test']")
+
         with open(split_file, 'r') as f:
             self.image_names = [line.strip() for line in f.readlines()]
-            
+
         with open(self.root_dir / 'classes.txt', 'r') as f:
             self.classes = [line.strip() for line in f.readlines()]
-            
+
         logging.info(f"Dataset initialized with {len(self.image_names)} images and {len(self.classes)} classes")
+
             
     def __len__(self):
         return len(self.image_names)
@@ -78,38 +81,53 @@ class PetDataset(Dataset):
             'image_name': img_name
         }
     
-    def _create_split_files(self):
-        """Create train/val split files if they don't exist"""
-        # Check if split files already exist
-        if (self.root_dir / 'train.txt').exists() and (self.root_dir / 'val.txt').exists():
-            logging.info("Split files already exist, skipping creation")
+    @staticmethod
+    def _create_split_files_static(root_dir, test_split=0.2):
+        """Static method to create train/val/test splits during download"""
+        root_dir = Path(root_dir)
+        train_file = root_dir / 'train.txt'
+        val_file = root_dir / 'val.txt'
+        test_file = root_dir / 'test.txt'
+        classes_file = root_dir / 'classes.txt'
+
+        if all(f.exists() and f.stat().st_size > 0 for f in [train_file, val_file, test_file, classes_file]):
+            logging.info("Split files already exist and are not empty, skipping creation")
             return
-            
-        logging.info("Creating train/val split files")
-        image_files = list(self.images_dir.glob('*.jpg'))
+
+        logging.info("Creating train/val/test split files")
+        images_dir = root_dir / 'images'
+        image_files = list(images_dir.glob('*.jpg'))
         image_names = [f.stem for f in image_files]
-        
-        if not (self.root_dir / 'classes.txt').exists():
-            class_names = sorted(set(name.split('_')[0] for name in image_names))
-            with open(self.root_dir / 'classes.txt', 'w') as f:
-                for class_name in class_names:
-                    f.write(f"{class_name}\n")
-            logging.info(f"Created classes.txt with {len(class_names)} classes")
-        
+
+        class_names = sorted(set(name.split('_')[0] for name in image_names))
+        with open(classes_file, 'w') as f:
+            for class_name in class_names:
+                f.write(f"{class_name}\n")
+        logging.info(f"Created classes.txt with {len(class_names)} classes")
+
         random.shuffle(image_names)
-        split_idx = int((1-self.test_split) * len(image_names))
-        train_names = image_names[:split_idx]
-        val_names = image_names[split_idx:]
-        
-        with open(self.root_dir / 'train.txt', 'w') as f:
+        n_total = len(image_names)
+        n_test = int(test_split * n_total)
+        n_val = int(test_split * n_total)
+        n_train = n_total - n_val - n_test
+
+        train_names = image_names[:n_train]
+        val_names = image_names[n_train:n_train + n_val]
+        test_names = image_names[n_train + n_val:]
+
+        with open(train_file, 'w') as f:
             for name in train_names:
                 f.write(f"{name}\n")
-                
-        with open(self.root_dir / 'val.txt', 'w') as f:
+        with open(val_file, 'w') as f:
             for name in val_names:
                 f.write(f"{name}\n")
-                
-        logging.info(f"Created split files: {len(train_names)} training samples, {len(val_names)} validation samples")
+        with open(test_file, 'w') as f:
+            for name in test_names:
+                f.write(f"{name}\n")
+
+        logging.info(f"Created split files: {len(train_names)} train, {len(val_names)} val, {len(test_names)} test")
+
+
     
     @staticmethod
     def download_dataset(root_dir):
@@ -161,3 +179,7 @@ class PetDataset(Dataset):
             shutil.move(str(ann_path), str(annotations_dir / ann_path.name))
             
         logging.info("Dataset download and organization completed")
+
+        # Create split files after downloading
+        logging.info("Creating train/val/test split files after download")
+        PetDataset._create_split_files_static(root_dir, test_split=0.2)

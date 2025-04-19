@@ -5,11 +5,15 @@ from pathlib import Path
 import logging
 import sys
 import datetime
+import torchvision.transforms as T
+from torch.utils.data import ConcatDataset
 
-from src.models.segmentation_model import WeaklySupervisedSegmentationModel
+from src.models.segmentation_model_resnet50 import WeaklySupervisedSegmentationModelResNet50
+from src.models.segmentation_model_unet import WeaklySupervisedSegmentationModelUNet
 from src.data import PetDataset
 from src.training.trainer import Trainer
 from src.training.evaluator import Evaluator
+from src.augment import AugmentedDataset
 
 
 def setup_logging(config):
@@ -78,34 +82,80 @@ def main():
     if args.download:
         logger.info("Downloading dataset...")
         PetDataset.download_dataset(config['data']['root_dir'])
-        logger.info("Dataset download completed")
+        logger.info("Dataset download and split completed")
     
-    # Initialize dataset
-    logger.info("Initializing dataset...")
-    dataset = PetDataset(
-        root_dir=config['data']['root_dir'],
-        split='train' if args.mode == 'train' else 'val',
-        weak_supervision=True
-    )
-    logger.info(f"Dataset initialized with {len(dataset)} samples")
+    # Create basic transform pipeline
+    transform = T.Compose([
+        T.Resize((224, 224)),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406],
+                   std=[0.229, 0.224, 0.225])
+    ])
     
+    if args.mode == 'train':
+        logger.info("Initializing training and validation datasets...")
+        train_dataset = PetDataset(
+            root_dir=config['data']['root_dir'],
+            split='train',
+            weak_supervision=True,
+            transform=transform
+        )
+        val_dataset = PetDataset(
+            root_dir=config['data']['root_dir'],
+            split='val',
+            weak_supervision=True,
+            transform=transform
+        )
+
+        # Augment training dataset
+        logger.info("Creating augmented dataset...")
+        augmented_dataset = AugmentedDataset(train_dataset)
+        augmented_dataset._build_augmented_indices()
+
+        logger.info("Saving sample pairs of original and augmented images...")
+        augmented_dataset.save_sample_pairs(
+            num_samples=5,
+            save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
+        )
+
+        full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
+        logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
+    
+    else:
+        logger.info("Initializing test dataset for evaluation...")
+        test_dataset = PetDataset(
+            root_dir=config['data']['root_dir'],
+            split='test',
+            weak_supervision=True,
+            transform=transform
+        )
+        logger.info(f"Test dataset size: {len(test_dataset)} samples")
+
     # Initialize model
     logger.info("Initializing model...")
-    model = WeaklySupervisedSegmentationModel(
-        num_classes=config['model']['num_classes'],
-        backbone=config['model']['backbone']
-    ).to(device)
+    if config['model']['backbone'] == 'resnet50':
+        model = WeaklySupervisedSegmentationModelResNet50(
+            num_classes=config['model']['num_classes'],
+        ).to(device)
+    elif config['model']['backbone'] == 'unet':
+        model = WeaklySupervisedSegmentationModelUNet(
+            num_classes=config['model']['num_classes'],
+        ).to(device)
+    else:
+        raise ValueError(f"Unsupported backbone: {config['model']['backbone']}")
     logger.info("Model initialized")
     
     if args.mode == 'train':
         logger.info("Starting training...")
         trainer = Trainer(
             model=model,
-            dataset=dataset,
+            train_dataset=full_train_dataset,
+            val_dataset=val_dataset,
             config=config
         )
         trainer.train()
         logger.info("Training completed")
+    
     else:
         if not args.checkpoint:
             raise ValueError("Checkpoint path must be provided for evaluation mode")
@@ -120,7 +170,7 @@ def main():
         logger.info("Starting evaluation...")
         evaluator = Evaluator(
             model=model,
-            dataset=dataset,
+            dataset=test_dataset,
             config=config
         )
         metrics = evaluator.evaluate()
@@ -128,6 +178,7 @@ def main():
         logger.info("Evaluation metrics:")
         for metric_name, value in metrics.items():
             logger.info(f"{metric_name}: {value:.4f}")
+
 
 if __name__ == '__main__':
     main()
