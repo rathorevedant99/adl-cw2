@@ -9,9 +9,10 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 class Trainer:
-    def __init__(self, model, dataset, config):
+    def __init__(self, model, train_dataset, val_dataset, config):
         self.model = model
-        self.dataset = dataset
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.config = config
 
         # Setup device
@@ -28,11 +29,17 @@ class Trainer:
 
         self.model = self.model.to(self.device)
 
-        # Setup data loader
+        # Setup data loaders
         self.train_loader = DataLoader(
-            dataset,
+            train_dataset,
             batch_size=config['training']['batch_size'],
             shuffle=True,
+            num_workers=config['training']['num_workers']
+        )
+        self.val_loader = DataLoader(
+            val_dataset,
+            batch_size=config['training']['batch_size'],
+            shuffle=False,
             num_workers=config['training']['num_workers']
         )
 
@@ -53,9 +60,9 @@ class Trainer:
         self.save_interval = config['training']['save_interval']
         self.apply_region_growing = config['training'].get('apply_region_growing', True)
 
-        # For tracking loss (without visualization)
-        self.epoch_losses = []
-        self.batch_losses = []
+        # For tracking loss
+        self.epoch_train_losses = []
+        self.epoch_val_losses = []
 
         logging.debug(f"Training configuration: {self.config}")
 
@@ -63,182 +70,165 @@ class Trainer:
         for epoch in range(self.config['training']['num_epochs']):
             self.model.train()
             epoch_loss = 0
-            epoch_batch_losses = []
 
             logging.info(f'Epoch {epoch+1}/{self.config["training"]["num_epochs"]}')
             for batch_idx, batch in enumerate(self.train_loader):
                 images = batch['image'].to(self.device)
                 labels = batch['mask'].to(self.device)
 
-                # Debug labels
-                if epoch == 0 and batch_idx < 2:
-                    logging.info(f"Label shape: {labels.shape}")
-                    logging.info(f"Label dtype: {labels.dtype}")
-                    logging.info(f"Label values: {labels}")
-                    if len(labels.shape) == 1:
-                        logging.info("CONFIRMATION: Labels are scalar values (one per image)")
-                    else:
-                        logging.info(f"Labels have shape {labels.shape} - they appear to be masks, not scalars")
-
-                # Convert to one-hot for region growing
                 one_hot_labels = self._to_one_hot(labels) if self.apply_region_growing else None
-
-                # Forward pass with region growing
                 outputs = self.model(images, labels=one_hot_labels, apply_region_growing=self.apply_region_growing)
                 logits = outputs['logits']
                 segmentation_maps = outputs['segmentation_maps']
 
-                # Classification loss
                 cls_loss = self.cls_criterion(logits, labels)
-
-                # Weak supervision loss
                 seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
-
-                # Total loss
                 loss = cls_loss + self.seg_loss_weight * seg_loss
 
-                # Backward pass
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-                # Track loss
-                batch_loss = loss.item()
-                epoch_loss += batch_loss
-                epoch_batch_losses.append(batch_loss)
-                self.batch_losses.append(batch_loss)
+                epoch_loss += loss.item()
 
                 if batch_idx % 10 == 0:
-                    logging.info(f'Batch {batch_idx}/{len(self.train_loader)}, Loss: {batch_loss:.4f}')
+                    logging.info(f'Batch {batch_idx}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
 
-            # Epoch summary
-            avg_epoch_loss = epoch_loss / len(self.train_loader)
-            self.epoch_losses.append(avg_epoch_loss)
-            logging.info(f'Epoch {epoch+1} completed. Average loss: {avg_epoch_loss:.4f}')
+            avg_train_loss = epoch_loss / len(self.train_loader)
+            self.epoch_train_losses.append(avg_train_loss)
+            logging.info(f'Epoch {epoch+1} training loss: {avg_train_loss:.4f}')
+
+            # Validation
+            val_loss = self._evaluate_on_validation_set()
+            self.epoch_val_losses.append(val_loss)
+            logging.info(f'Epoch {epoch+1} validation loss: {val_loss:.4f}')
 
             # Save checkpoint
             if (epoch + 1) % self.save_interval == 0:
-                self._save_checkpoint(epoch + 1, avg_epoch_loss)
+                self._save_checkpoint(epoch + 1, avg_train_loss)
 
-        # Plot loss
-        self._plot_loss()
+            # Plot loss after training
+            self._plot_loss()
+
+    def _evaluate_on_validation_set(self):
+        self.model.eval()
+        total_loss = 0
+        count = 0
+
+        with torch.no_grad():
+            for batch in self.val_loader:
+                images = batch['image'].to(self.device)
+                labels = batch['mask'].to(self.device)
+
+                one_hot_labels = self._to_one_hot(labels) if self.apply_region_growing else None
+                outputs = self.model(images, labels=one_hot_labels, apply_region_growing=self.apply_region_growing)
+                logits = outputs['logits']
+                segmentation_maps = outputs['segmentation_maps']
+
+                cls_loss = self.cls_criterion(logits, labels)
+                seg_loss = self._calculate_weak_supervision_loss(segmentation_maps, labels)
+                loss = cls_loss + self.seg_loss_weight * seg_loss
+
+                total_loss += loss.item()
+                count += 1
+
+        return total_loss / count if count > 0 else 0.0
 
     def _plot_loss(self):
-        """Plot training loss over epochs using PIL/Pillow"""
-        
-        # Create a blank white image
+        """Plot both training and validation loss using Pillow"""
         width, height = 1000, 500
-        margin = 50
+        margin = 60
         plot_width = width - 2 * margin
         plot_height = height - 2 * margin
-        
+
         image = Image.new('RGB', (width, height), color='white')
         draw = ImageDraw.Draw(image)
-        
-        # Draw frame and axes
-        draw.rectangle([(margin, margin), (width - margin, height - margin)], outline='black')
-        
-        # Draw axes labels
+
         try:
-            # Try to load a font - use default if not available
             font = ImageFont.truetype("arial.ttf", 12)
         except IOError:
             font = ImageFont.load_default()
-        
+
+        # Draw axes
+        draw.rectangle([(margin, margin), (width - margin, height - margin)], outline='black')
+
+        # Axis labels
         draw.text((width // 2, height - margin // 2), "Epochs", fill='black', anchor="mm", font=font)
         draw.text((margin // 2, height // 2), "Loss", fill='black', anchor="mm", font=font, angle=90)
-        draw.text((width // 2, margin // 2), "Training Loss", fill='black', anchor="mm", font=font)
-        
-        # Normalize loss values for plotting
-        if self.epoch_losses:
-            losses = np.array(self.epoch_losses)
-            min_loss = np.min(losses)
-            max_loss = np.max(losses)
-            
-            # Add a small buffer to the range to avoid plotting on the edges
+        draw.text((width // 2, margin // 2), "Training and Validation Loss", fill='black', anchor="mm", font=font)
+
+        if self.epoch_train_losses:
+            train_losses = np.array(self.epoch_train_losses)
+            val_losses = np.array(self.epoch_val_losses)
+            all_losses = np.concatenate([train_losses, val_losses])
+            min_loss, max_loss = all_losses.min(), all_losses.max()
             loss_range = max_loss - min_loss
-            if loss_range == 0:  # Handle case where all losses are the same
+            if loss_range == 0:
                 loss_range = max_loss * 0.1 or 0.1
-                
             min_loss -= loss_range * 0.05
             max_loss += loss_range * 0.05
-            
-            # Calculate x and y coordinates for each point
-            num_points = len(losses)
-            x_step = plot_width / (num_points - 1) if num_points > 1 else plot_width
-            
-            points = []
-            for i, loss in enumerate(losses):
-                x = margin + i * x_step
-                # Normalize and invert y (PIL y-axis increases downward)
-                y = margin + plot_height - plot_height * (loss - min_loss) / (max_loss - min_loss)
-                points.append((x, y))
-                
-            # Draw lines connecting points
-            if len(points) > 1:
-                for i in range(len(points) - 1):
-                    draw.line([points[i], points[i+1]], fill='blue', width=2)
-            
-            # Draw points
-            for x, y in points:
-                draw.ellipse((x-3, y-3, x+3, y+3), fill='blue')
-                
-            # Draw y-axis labels (loss values)
-            num_y_ticks = 5
-            for i in range(num_y_ticks + 1):
-                y_pos = margin + plot_height - i * plot_height / num_y_ticks
-                tick_value = min_loss + i * (max_loss - min_loss) / num_y_ticks
-                draw.line([(margin - 5, y_pos), (margin, y_pos)], fill='black')
+
+            def normalize(losses):
+                return [
+                    margin + plot_height - plot_height * (loss - min_loss) / (max_loss - min_loss)
+                    for loss in losses
+                ]
+
+            train_y = normalize(train_losses)
+            val_y = normalize(val_losses)
+            x_step = plot_width / (len(train_losses) - 1) if len(train_losses) > 1 else plot_width
+            x_coords = [margin + i * x_step for i in range(len(train_losses))]
+
+            # Draw lines
+            for i in range(1, len(x_coords)):
+                draw.line([x_coords[i - 1], train_y[i - 1], x_coords[i], train_y[i]], fill='blue', width=2)
+                draw.line([x_coords[i - 1], val_y[i - 1], x_coords[i], val_y[i]], fill='green', width=2)
+
+            # Draw dots
+            for x, y in zip(x_coords, train_y):
+                draw.ellipse((x - 3, y - 3, x + 3, y + 3), fill='blue')
+            for x, y in zip(x_coords, val_y):
+                draw.ellipse((x - 3, y - 3, x + 3, y + 3), fill='green')
+
+            # Axis ticks
+            for i in range(6):
+                y_pos = margin + plot_height - i * plot_height / 5
+                tick_value = min_loss + i * (max_loss - min_loss) / 5
                 draw.text((margin - 10, y_pos), f"{tick_value:.4f}", fill='black', anchor="rm", font=font)
-                
-            # Draw x-axis labels (epochs)
-            num_x_ticks = min(num_points, 10)  # Limit number of ticks to avoid overcrowding
-            for i in range(num_x_ticks + 1):
-                epoch = i * (num_points - 1) // num_x_ticks if num_points > 1 else 0
+
+            for i in range(min(len(train_losses), 10)):
+                epoch = i * (len(train_losses) - 1) // 9 if len(train_losses) > 1 else 0
                 x_pos = margin + epoch * x_step
-                draw.line([(x_pos, height - margin), (x_pos, height - margin + 5)], fill='black')
                 draw.text((x_pos, height - margin + 10), str(epoch), fill='black', anchor="mt", font=font)
-                
-            # Draw legend
-            legend_x = width - margin - 100
-            legend_y = margin + 20
-            draw.rectangle([(legend_x, legend_y), (legend_x + 80, legend_y + 20)], outline='black')
-            draw.line([(legend_x + 10, legend_y + 10), (legend_x + 30, legend_y + 10)], fill='blue', width=2)
-            draw.ellipse((legend_x + 20 - 3, legend_y + 10 - 3, legend_x + 20 + 3, legend_y + 10 + 3), fill='blue')
-            draw.text((legend_x + 40, legend_y + 10), "Epoch Loss", fill='black', anchor="lm", font=font)
-            
-        # Make sure directory exists
+
+            # Legend
+            legend_x = width - margin - 150
+            legend_y = margin + 10
+            draw.text((legend_x, legend_y), "Legend:", fill='black', font=font)
+            draw.line([(legend_x, legend_y + 20), (legend_x + 20, legend_y + 20)], fill='blue', width=2)
+            draw.text((legend_x + 30, legend_y + 20), "Train Loss", fill='black', font=font)
+            draw.line([(legend_x, legend_y + 40), (legend_x + 20, legend_y + 40)], fill='green', width=2)
+            draw.text((legend_x + 30, legend_y + 40), "Val Loss", fill='black', font=font)
+
         os.makedirs("experiments/plots", exist_ok=True)
-        
-        # Save the image
         image.save("experiments/plots/loss_plot.png")
-        print("Loss plot saved to experiments/plots/loss_plot.png")
+        logging.info("Loss plot saved to experiments/plots/loss_plot.png")
 
     def _calculate_weak_supervision_loss(self, segmentation_maps, labels):
-        """Calculate weak supervision loss using pseudo masks"""
         batch_size = segmentation_maps.size(0)
         loss = 0
-
         for i in range(batch_size):
             seg_map = segmentation_maps[i]
             label_idx = labels[i].item()
-            target_activation = seg_map[label_idx]
-            target_activation = torch.sigmoid(target_activation)
-
-            threshold = 0.5
-            binary_mask = (target_activation > threshold).float()
-
+            target_activation = torch.sigmoid(seg_map[label_idx])
+            binary_mask = (target_activation > 0.5).float()
             intersection = (target_activation * binary_mask).sum()
             union = target_activation.sum() + binary_mask.sum()
             dice_score = (2 * intersection + 1e-6) / (union + 1e-6)
-            dice_loss = 1 - dice_score
-
-            loss += dice_loss
-
+            loss += (1 - dice_score)
         return loss / batch_size
 
     def _to_one_hot(self, labels):
-        """Convert class indices to one-hot encoded labels"""
         batch_size = labels.size(0)
         num_classes = self.model.num_classes if hasattr(self.model, 'num_classes') else self.config['model']['num_classes']
         one_hot = torch.zeros(batch_size, num_classes, device=self.device)
@@ -246,7 +236,6 @@ class Trainer:
         return one_hot
 
     def _save_checkpoint(self, epoch, loss):
-        """Save model checkpoint"""
         checkpoint = {
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
@@ -254,7 +243,6 @@ class Trainer:
             'loss': loss,
             'config': self.config
         }
-
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_path = self.checkpoint_dir / f'checkpoint_epoch_{epoch}.pt'
         torch.save(checkpoint, checkpoint_path)
