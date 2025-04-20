@@ -98,7 +98,8 @@ def main():
             root_dir=config['data']['root_dir'],
             split='train',
             weak_supervision=True,
-            transform=transform
+            transform=transform,
+            augment=config['training']['use_augmentation']
         )
         val_dataset = PetDataset(
             root_dir=config['data']['root_dir'],
@@ -107,20 +108,22 @@ def main():
             transform=transform
         )
 
-        # Augment training dataset
-        logger.info("Creating augmented dataset...")
-        augmented_dataset = AugmentedDataset(train_dataset)
-        augmented_dataset._build_augmented_indices()
+        if config['training']['use_augmentation']:
+            logger.info("Applying data augmentation to training data...")
+            augmented_dataset = AugmentedDataset(train_dataset)
+            augmented_dataset._build_augmented_indices()
 
-        logger.info("Saving sample pairs of original and augmented images...")
-        augmented_dataset.save_sample_pairs(
-            num_samples=5,
-            save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
-        )
-
-        full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
-        logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
-    
+            # Save augmentation samples
+            logger.info("Saving sample pairs of original and augmented images...")
+            augmented_dataset.save_sample_pairs(
+                num_samples=5,
+                save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
+            )
+            full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
+            logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
+        else:
+            full_train_dataset = train_dataset
+            
     else:
         logger.info("Initializing test dataset for evaluation...")
         test_dataset = PetDataset(

@@ -19,6 +19,7 @@ training:
   seg_loss_weight: 0.1
   pin_memory: true
   amp: true
+  use_augmentation: true
 
 evaluation:
   batch_size: 128
