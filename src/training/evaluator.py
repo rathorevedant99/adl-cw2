@@ -7,12 +7,14 @@ import random
 import logging
 from PIL import Image, ImageDraw
 import torchvision.transforms as T
+import matplotlib.pyplot as plt
 
 class Evaluator:
-    def __init__(self, model, dataset, config):
+    def __init__(self, model, dataset, config, weak_supervision_types=None):
         self.model = model
         self.dataset = dataset
         self.config = config
+        self.weak_supervision_types = weak_supervision_types or ['labels']
         
         device_name = config.get('device', 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
         
@@ -39,6 +41,11 @@ class Evaluator:
         self.viz_dir = Path(config.get('viz_dir', 'experiments/visualizations'))
         self.viz_dir.mkdir(parents=True, exist_ok=True)
         
+        # Create a directory for experiment-specific visualizations
+        self.weak_sup_str = '_'.join(self.weak_supervision_types)
+        self.exp_viz_dir = self.viz_dir / self.weak_sup_str
+        self.exp_viz_dir.mkdir(parents=True, exist_ok=True)
+        
     def evaluate(self):
         self.model.eval()
         metrics = {
@@ -52,18 +59,25 @@ class Evaluator:
         all_seg_preds = []
         all_seg_labels = []
         
-        logging.info('Starting model evaluation...')
+        logging.info(f'Starting model evaluation with weak supervision types: {self.weak_supervision_types}')
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.eval_loader):
                 images = batch['image'].to(self.device)
-                seg_labels = batch['mask'].to(self.device)
                 
+                # Always use full segmentation masks for evaluation
+                seg_labels = batch['full_mask'].to(self.device)
+                
+                # For classification labels
                 cls_labels = torch.zeros(seg_labels.size(0), dtype=torch.long, device=self.device)
                 for i in range(seg_labels.size(0)):
                     unique, counts = torch.unique(seg_labels[i], return_counts=True)
                     cls_labels[i] = unique[torch.argmax(counts)]
                 
-                outputs = self.model(images)
+                # Run model with the appropriate weak supervision
+                one_hot_labels = None
+                apply_region_growing = True
+                
+                outputs = self.model(images, labels=one_hot_labels, apply_region_growing=apply_region_growing)
                 logits = outputs['logits']
                 segmentation_maps = outputs['segmentation_maps']
                 
@@ -89,12 +103,13 @@ class Evaluator:
                     logging.info(f'Evaluated batch {batch_idx}/{len(self.eval_loader)}')
         
         final_metrics = {k: float(np.mean(v)) for k, v in metrics.items()}
-        logging.info("\nEvaluation Results:")
+        logging.info(f"\nEvaluation Results for {self.weak_sup_str}:")
         logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
         logging.info(f"Mean IoU: {final_metrics['mean_iou']:.4f}")
         logging.info(f"Pixel Accuracy: {final_metrics['pixel_accuracy']:.4f}")
         
         self._visualize_cams()
+        self._visualize_weak_supervision_comparison()
         
         return final_metrics
 
@@ -149,7 +164,7 @@ class Evaluator:
         for idx in indices:
             sample = self.dataset[idx]
             image = sample['image'].unsqueeze(0).to(self.device)
-            true_label = sample['mask']
+            true_label = sample['class_label']
             image_name = sample['image_name']
 
             with torch.no_grad():
@@ -187,6 +202,131 @@ class Evaluator:
                 draw.text((width * 3 + 10, 10), f"Pred Class {pred_class} CAM", fill='white')
                 draw.text((width * 4 + 10, 10), f"Pred Class Overlay", fill='white')
                 
-                final_img.save(self.viz_dir / f'cam_{image_name}.png')
+                final_img.save(self.exp_viz_dir / f'cam_{image_name}.png')
                 logging.info(f"Saved CAM visualization for {image_name} (True: {true_label}, Pred: {pred_class})")
-        logging.info(f"All CAM visualizations saved to {self.viz_dir}")
+        logging.info(f"All CAM visualizations saved to {self.exp_viz_dir}")
+
+    def _visualize_weak_supervision_comparison(self, num_samples=3):
+        """Visualize the different weak supervision signals and resulting segmentation"""
+        logging.info(f"\nGenerating weak supervision comparison visualizations for {num_samples} sample images...")
+        
+        indices = random.sample(range(len(self.dataset)), min(num_samples, len(self.dataset)))
+        
+        for idx in indices:
+            sample = self.dataset[idx]
+            image = sample['image'].unsqueeze(0).to(self.device)
+            image_name = sample['image_name']
+            
+            # Get ground truth mask for reference
+            full_mask = sample['full_mask']
+            
+            # Get weak supervision masks if available
+            weak_masks = {}
+            
+            if 'labels' in self.weak_supervision_types:
+                weak_masks['labels'] = f"Class Label: {sample['class_label'].item()}"
+                
+            if 'bboxes' in self.weak_supervision_types and 'bbox_mask' in sample:
+                weak_masks['bboxes'] = sample['bbox_mask']
+                
+            if 'scribbles' in self.weak_supervision_types and 'scribble_mask' in sample:
+                weak_masks['scribbles'] = sample['scribble_mask']
+            
+            # Get model prediction
+            with torch.no_grad():
+                outputs = self.model(image)
+                segmentation_maps = outputs['segmentation_maps']
+                predicted_mask = torch.argmax(segmentation_maps, dim=1)[0].cpu()
+            
+            # Create visualization
+            # Convert tensors to numpy arrays for visualization
+            img_np = image[0].cpu().numpy().transpose(1, 2, 0)
+            img_np = (img_np * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])) * 255
+            img_np = img_np.astype(np.uint8)
+            
+            # Create a figure for visualization
+            n_cols = 3 + len(weak_masks)  # Original, weak supervision signals, prediction, ground truth
+            fig, axes = plt.subplots(1, n_cols, figsize=(4 * n_cols, 4))
+            
+            # Plot original image
+            axes[0].imshow(img_np)
+            axes[0].set_title("Original Image")
+            axes[0].axis('off')
+            
+            # Plot weak supervision signals
+            col_idx = 1
+            for sup_type, mask in weak_masks.items():
+                if isinstance(mask, str):  # For class labels
+                    axes[col_idx].imshow(img_np)
+                    axes[col_idx].text(10, 20, mask, color='white', fontsize=12, 
+                                      bbox=dict(facecolor='black', alpha=0.5))
+                else:  # For visual masks
+                    if mask.dim() <= 2:  # Single-channel mask
+                        mask_vis = self._colorize_mask(mask.numpy())
+                        axes[col_idx].imshow(mask_vis)
+                    else:  # Multi-channel mask
+                        mask_vis = self._colorize_mask(torch.argmax(mask, dim=0).numpy())
+                        axes[col_idx].imshow(mask_vis)
+                
+                axes[col_idx].set_title(f"{sup_type.capitalize()} Supervision")
+                axes[col_idx].axis('off')
+                col_idx += 1
+            
+            # Plot prediction
+            pred_vis = self._colorize_mask(predicted_mask.numpy())
+            axes[col_idx].imshow(pred_vis)
+            axes[col_idx].set_title("Model Prediction")
+            axes[col_idx].axis('off')
+            col_idx += 1
+            
+            # Plot ground truth
+            gt_vis = self._colorize_mask(full_mask.numpy())
+            axes[col_idx].imshow(gt_vis)
+            axes[col_idx].set_title("Ground Truth")
+            axes[col_idx].axis('off')
+            
+            plt.tight_layout()
+            vis_path = self.exp_viz_dir / f"weak_sup_comparison_{image_name}.png"
+            plt.savefig(vis_path)
+            plt.close()
+            
+            logging.info(f"Saved weak supervision comparison for {image_name} at {vis_path}")
+        
+        logging.info(f"All weak supervision comparisons saved to {self.exp_viz_dir}")
+    
+    def _colorize_mask(self, mask):
+        """Convert a segmentation mask to a colorized visualization"""
+        # Define colors for different classes
+        colors = [
+            [0, 0, 0],       # Background (black)
+            [255, 0, 0],     # Class 1 (red)
+            [0, 255, 0],     # Class 2 (green)
+            [0, 0, 255],     # Class 3 (blue)
+            [255, 255, 0],   # Class 4 (yellow)
+            [255, 0, 255],   # Class 5 (magenta)
+            [0, 255, 255],   # Class 6 (cyan)
+            [128, 0, 0],     # Class 7 (maroon)
+            [0, 128, 0],     # Class 8 (dark green)
+            [0, 0, 128],     # Class 9 (navy)
+            [128, 128, 0],   # Class 10 (olive)
+            [128, 0, 128],   # Class 11 (purple)
+            [0, 128, 128],   # Class 12 (teal)
+            [192, 192, 192], # Class 13 (silver)
+            [128, 128, 128], # Class 14 (gray)
+            [255, 165, 0],   # Class 15 (orange)
+            [210, 105, 30],  # Class 16 (chocolate)
+            [255, 192, 203], # Class 17 (pink)
+            [165, 42, 42],   # Class 18 (brown)
+            [240, 230, 140], # Class 19 (khaki)
+        ]
+        
+        # Create RGB image
+        h, w = mask.shape
+        colored_mask = np.zeros((h, w, 3), dtype=np.uint8)
+        
+        # Fill in colors for each class
+        num_classes = min(len(colors), int(mask.max()) + 1)
+        for i in range(num_classes):
+            colored_mask[mask == i] = colors[i]
+            
+        return colored_mask
