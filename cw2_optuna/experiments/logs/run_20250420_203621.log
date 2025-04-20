@@ -1,0 +1,64 @@
+2025-04-20 20:36:21,976 - root - INFO - Trial #0: lr=0.0001098948895685442, wd=1.4714783124767574e-05, wseg=0.1303422433810626
+2025-04-20 20:36:23,701 - root - INFO - Initializing train dataset with weak_supervision=False
+2025-04-20 20:36:23,701 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 20:36:23,702 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 20:36:23,703 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 20:36:23,703 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 20:36:23,703 - root - INFO - Initializing val dataset with weak_supervision=False
+2025-04-20 20:36:23,703 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 20:36:23,707 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 20:36:23,707 - root - INFO - Validation set size: 1478 samples
+2025-04-20 20:36:24,569 - root - INFO - Using device: cuda
+2025-04-20 20:36:24,572 - root - INFO - Epoch 1/3
+2025-04-20 20:37:05,641 - root - INFO - Label shape: torch.Size([32, 64, 64])
+2025-04-20 20:37:05,641 - root - INFO - Label dtype: torch.int64
+2025-04-20 20:37:05,671 - root - INFO - Label values: tensor([[[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1]],
+
+        [[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1]],
+
+        [[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 0, 0, 0],
+         [1, 1, 1,  ..., 0, 0, 0],
+         [1, 1, 1,  ..., 0, 0, 0]],
+
+        ...,
+
+        [[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1]],
+
+        [[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1]],
+
+        [[1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         ...,
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1],
+         [1, 1, 1,  ..., 1, 1, 1]]], device='cuda:0')
+2025-04-20 20:37:05,671 - root - INFO - Labels have shape torch.Size([32, 64, 64]) - they appear to be masks, not scalars

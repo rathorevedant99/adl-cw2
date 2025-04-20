@@ -1,0 +1,10 @@
+2025-04-20 20:32:42,205 - root - INFO - Trial #0: lr=0.0007200037565084002, wd=0.0009146084135498079, wseg=0.3902798083552982
+2025-04-20 20:32:43,937 - root - INFO - Initializing train dataset with weak_supervision=False
+2025-04-20 20:32:43,937 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 20:32:43,938 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 20:32:43,938 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 20:32:43,939 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 20:32:43,939 - root - INFO - Initializing val dataset with weak_supervision=False
+2025-04-20 20:32:43,939 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 20:32:43,944 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 20:32:43,944 - root - INFO - Validation set size: 1478 samples

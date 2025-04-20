@@ -1,0 +1,38 @@
+2025-04-20 17:59:53,468 - root - INFO - Trial #3: lr=0.00012309251668243278, wd=0.00036547033020438126, wseg=0.10793136829626793
+2025-04-20 17:59:53,491 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 17:59:53,492 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:59:53,493 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 17:59:53,493 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 17:59:53,493 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 17:59:53,493 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 17:59:53,494 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:59:53,495 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 17:59:53,495 - root - INFO - Validation set size: 1478 samples
+2025-04-20 17:59:54,556 - root - INFO - Created augmented dataset with 94 augmented images
+2025-04-20 17:59:54,556 - root - INFO - Combined WS train size: 194 (subset + augmented)
+2025-04-20 17:59:54,829 - root - INFO - Using device: cuda
+2025-04-20 17:59:54,831 - root - INFO - Epoch 1/3
+2025-04-20 18:00:33,180 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:00:33,180 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:00:33,181 - root - INFO - Label values: tensor([25, 33, 34, 11, 18,  3, 14, 10, 18, 30, 20,  9, 14, 34, 20, 21, 24, 24,
+        34,  3, 23, 16,  3, 30,  4,  7,  6, 24, 10, 24, 28,  5],
+       device='cuda:0')
+2025-04-20 18:00:33,181 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:00:35,345 - root - INFO - Batch 0/7, Loss: 9.2521
+2025-04-20 18:00:35,353 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:00:35,354 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:00:35,355 - root - INFO - Label values: tensor([ 5,  2,  0, 11, 10, 16, 14,  8,  5, 12, 25, 21,  0, 30, 25, 14, 31, 30,
+        34,  3, 24,  3,  0, 14, 13, 11,  5, 10, 28, 31, 29, 26],
+       device='cuda:0')
+2025-04-20 18:00:35,355 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:00:48,211 - root - INFO - Epoch 1 training loss: 7.5994
+2025-04-20 18:01:48,021 - root - INFO - Epoch 1 validation loss: 2100.9346
+2025-04-20 18:01:48,142 - root - INFO - Epoch 2/3
+2025-04-20 18:02:28,916 - root - INFO - Batch 0/7, Loss: 5.7245
+2025-04-20 18:02:40,843 - root - INFO - Epoch 2 training loss: 5.7647
+2025-04-20 18:03:28,919 - root - INFO - Epoch 2 validation loss: 3.7188
+2025-04-20 18:03:29,014 - root - INFO - Epoch 3/3
+2025-04-20 18:04:09,959 - root - INFO - Batch 0/7, Loss: 5.7345
+2025-04-20 18:04:21,180 - root - INFO - Epoch 3 training loss: 5.1326
+2025-04-20 18:05:09,572 - root - INFO - Epoch 3 validation loss: 3.7188
+2025-04-20 18:05:09,606 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
