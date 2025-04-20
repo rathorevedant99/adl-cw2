@@ -98,8 +98,7 @@ def main():
             root_dir=config['data']['root_dir'],
             split='train',
             weak_supervision=True,
-            transform=transform,
-            augment=config['training']['use_augmentation']
+            transform=transform
         )
         val_dataset = PetDataset(
             root_dir=config['data']['root_dir'],
