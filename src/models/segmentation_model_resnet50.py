@@ -80,8 +80,19 @@ class WeaklySupervisedSegmentationModelResNet50(nn.Module):
                     # Skip empty regions or negative labels
                     if not non_empty[b, c]:
                         continue
-                    if labels is not None and labels[b, c] == 0:
-                        continue
+                    if labels is not None:
+                        # Check the shape of labels to determine how to handle it
+                        if labels.dim() == 2:  # One-hot encoded class labels [B, C]
+                            if labels[b, c] == 0:
+                                continue
+                        elif labels.dim() == 3:  # For pixel-level masks [B, H, W]
+                            # For pixel masks, skip if no pixels for this class
+                            if not ((labels[b] == c).any()):
+                                continue
+                        elif labels.dim() == 4:  # For one-hot encoded pixel masks [B, C, H, W]
+                            # Skip if no active pixels for this class
+                            if not (labels[b, c].sum() > 0):
+                                continue
 
                     # Get foreground features
                     fg_mask = foreground[b, c].unsqueeze(0)
