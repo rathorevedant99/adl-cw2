@@ -63,6 +63,8 @@ class Evaluator:
                     for i in range(seg_labels.size(0)):
                         unique, counts = torch.unique(seg_labels[i], return_counts=True)
                         cls_labels[i] = unique[torch.argmax(counts)]
+                if self.method == 'FS':
+                    cls_labels = batch['label'].to(self.device)
                 outputs = self.model(images)
                 segmentation_maps = outputs['segmentation_maps']
                 
@@ -74,14 +76,12 @@ class Evaluator:
                 )
                 metrics['mean_iou'].append(batch_metrics['mean_iou'])
                 metrics['pixel_accuracy'].append(batch_metrics['pixel_accuracy'])
-                if self.method == 'WS':
-                    logits    = outputs['logits']
-                    cls_preds = torch.argmax(logits, dim=1)
-                    acc       = (cls_preds == cls_labels).float().mean().item()
-                    metrics['accuracy'].append(acc)
-                if self.method == 'WS':
-                    all_cls_preds.extend(cls_preds.cpu().numpy())
-                    all_cls_labels.extend(cls_labels.cpu().numpy())
+                logits    = outputs['logits']
+                cls_preds = torch.argmax(logits, dim=1)
+                acc       = (cls_preds == cls_labels).float().mean().item()
+                metrics['accuracy'].append(acc)
+                all_cls_preds.extend(cls_preds.cpu().numpy())
+                all_cls_labels.extend(cls_labels.cpu().numpy())
                 all_seg_preds.extend(seg_preds.cpu().numpy())
                 all_seg_labels.extend(seg_labels.cpu().numpy())
                 
@@ -93,8 +93,7 @@ class Evaluator:
         for k, vals in metrics.items():
             final_metrics[k] = float(np.mean(vals))
         logging.info("\nEvaluation Results:")
-        if self.method == 'WS':
-            logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
+        logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
         logging.info(f"Mean IoU: {final_metrics['mean_iou']:.4f}")
         logging.info(f"Pixel Accuracy: {final_metrics['pixel_accuracy']:.4f}")
         
