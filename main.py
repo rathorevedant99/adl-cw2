@@ -156,13 +156,32 @@ def main():
 
     else:
         logger.info("Initializing test dataset for evaluation...")
-        test_dataset = PetDataset(
-            root_dir=config['data']['root_dir'],
-            split='test',
-            weak_supervision=True,
-            transform=transform
-        )
-        logger.info(f"Test dataset size: {len(test_dataset)} samples")                
+        if is_weak:
+            # 1) Dataset that returns the image‐level class label
+            weak_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = True,     # gives you batch['mask'] = class_idx
+                transform        = transform
+            )
+            # 2) Dataset that returns the full pixel mask
+            fs_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = False,    # gives you batch['mask'] = H×W mask
+                transform        = transform
+            )
+            # 3) Zip them together
+            eval_ds = list(zip(weak_ds, fs_ds))
+        else:
+            # Fully‐supervised: you only need the one dataset
+            eval_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = False,
+                transform        = transform
+            )
+        logger.info(f"Test dataset size: {len(eval_ds)} samples")                
     # Initialize model
     logger.info("Initializing model...")
     # choose FS vs WS
@@ -217,7 +236,7 @@ def main():
         logger.info("Starting evaluation...")
         evaluator = Evaluator(
             model=model,
-            dataset=test_dataset,
+            dataset=eval_ds,
             config=config
         )
         metrics = evaluator.evaluate()

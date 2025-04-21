@@ -3,7 +3,7 @@ data:
 
 model:
   num_classes: 37  # Number of pet breeds in the Oxford-IIIT Pet dataset
-  backbone: "resnet50"  # Backbone network for the segmentation model (unet, resnet50)
+  backbone: "unet"  # Backbone network for the segmentation model (unet, resnet50)
   method: "WS"           # FS = fully‑supervised, WS = weakly‑supervised
 
 training:
