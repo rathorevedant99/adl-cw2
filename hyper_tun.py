@@ -11,9 +11,6 @@ import optuna
 from pathlib import Path
 import torchvision.transforms as T
 from torch.utils.data import ConcatDataset, Subset
-import optuna
-from optuna import visualization as vis
-import matplotlib.pyplot as plt
 
 from src.models.segmentation_model_resnet50 import (
     WeaklySupervisedSegmentationModelResNet50,
@@ -178,10 +175,6 @@ def main():
         study = optuna.create_study(storage = "sqlite:///optuna_pets.db", study_name="pet_segmentations_ws", direction='minimize', sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.MedianPruner(n_warmup_steps=2))
         study.optimize(objective, n_trials=args.n_trials, timeout=args.timeout)
         print("Best hyperparameters:", study.best_trial.params)
-        try:
-            visualize_optuna_results(study)
-        except Exception as e:
-            print(f"Visualization failed: {e}")
         import joblib
         joblib.dump(study, "experiments/optuna_study.pkl")
     else:
@@ -202,33 +195,6 @@ def main():
         evaluator = Evaluator(model, test_ds, config)
         metrics = evaluator.evaluate()
         print("Evaluation metrics:", metrics)
-
-def visualize_optuna_results(study):
-    # 1. Plot optimization history
-    history_fig = vis.plot_optimization_history(study)
-    history_fig.write_image("experiments/plots/optuna_history.png")
-    
-    # 2. Plot parameter importances
-    param_imp_fig = vis.plot_param_importances(study)
-    param_imp_fig.write_image("experiments/plots/optuna_param_importance.png")
-    
-    # 3. Plot parallel coordinate plot to visualize parameter relationships
-    parallel_fig = vis.plot_parallel_coordinate(study)
-    parallel_fig.write_image("experiments/plots/optuna_parallel_coordinate.png")
-    
-    # 4. Plot slice plot to see parameter vs objective
-    slice_fig = vis.plot_slice(study)
-    slice_fig.write_image("experiments/plots/optuna_slice.png")
-    
-    # 5. Plot contour plot for pairs of parameters
-    contour_fig = vis.plot_contour(study)
-    contour_fig.write_image("experiments/plots/optuna_contour.png")
-    
-    # 6. Plot EDF (Empirical Distribution Function)
-    edf_fig = vis.plot_edf(study)
-    edf_fig.write_image("experiments/plots/optuna_edf.png")
-    
-    print("Visualization plots saved to experiments/plots/")
 
 if __name__ == '__main__':
     main()
