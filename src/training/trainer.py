@@ -37,7 +37,9 @@ class Trainer:
             train_dataset,
             batch_size=config['training']['batch_size'],
             shuffle=True,
-            num_workers=config['training']['num_workers']
+            num_workers=config['training']['num_workers'],
+            pin_memory=config['training'].get('pin_memory', False),
+            persistent_workers=True
         )
         self.val_loader = DataLoader(
             val_dataset,
@@ -67,7 +69,7 @@ class Trainer:
         else:
             self.cls_criterion = nn.CrossEntropyLoss()
             self.seg_loss_weight = config['training']['seg_loss_weight']
-            self.apply_region_growing = config['training'].get('apply_region_growing', True)
+            self.apply_region_growing = config['training'].get('apply_region_growing', False)
         self.save_interval = config['training']['save_interval']
         # For tracking loss (without visualization)
         # For tracking loss
@@ -123,8 +125,9 @@ class Trainer:
                         loss = self.seg_criterion(seg_maps, labels)  # masks: [B, H, W] with 0..C‑1                    
                 # Backward pass
                 self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
 
                 # Track loss
                 batch_loss = loss.item()
