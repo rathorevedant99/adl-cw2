@@ -13,7 +13,8 @@ class Evaluator:
         self.model = model
         self.dataset = dataset
         self.config = config
-        
+        self.method = config['model'].get('method','WS').upper()
+
         device_name = config.get('device', 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
         
         if device_name == 'mps' and not torch.backends.mps.is_available():
@@ -57,40 +58,43 @@ class Evaluator:
             for batch_idx, batch in enumerate(self.eval_loader):
                 images = batch['image'].to(self.device)
                 seg_labels = batch['mask'].to(self.device)
-                
-                cls_labels = torch.zeros(seg_labels.size(0), dtype=torch.long, device=self.device)
-                for i in range(seg_labels.size(0)):
-                    unique, counts = torch.unique(seg_labels[i], return_counts=True)
-                    cls_labels[i] = unique[torch.argmax(counts)]
-                
+                if self.method == 'WS':
+                    cls_labels = torch.zeros(seg_labels.size(0), dtype=torch.long, device=self.device)
+                    for i in range(seg_labels.size(0)):
+                        unique, counts = torch.unique(seg_labels[i], return_counts=True)
+                        cls_labels[i] = unique[torch.argmax(counts)]
                 outputs = self.model(images)
-                logits = outputs['logits']
                 segmentation_maps = outputs['segmentation_maps']
                 
-                cls_preds = torch.argmax(logits, dim=1)
                 seg_preds = torch.argmax(segmentation_maps, dim=1)
                 
                 batch_metrics = self._calculate_metrics(
-                    cls_preds,
                     seg_preds,
-                    cls_labels,
                     seg_labels
                 )
-                
-                for k, v in batch_metrics.items():
-                    metrics[k].append(v)
-                
-                all_cls_preds.extend(cls_preds.cpu().numpy())
-                all_cls_labels.extend(cls_labels.cpu().numpy())
+                metrics['mean_iou'].append(batch_metrics['mean_iou'])
+                metrics['pixel_accuracy'].append(batch_metrics['pixel_accuracy'])
+                if self.method == 'WS':
+                    logits    = outputs['logits']
+                    cls_preds = torch.argmax(logits, dim=1)
+                    acc       = (cls_preds == cls_labels).float().mean().item()
+                    metrics['accuracy'].append(acc)
+                if self.method == 'WS':
+                    all_cls_preds.extend(cls_preds.cpu().numpy())
+                    all_cls_labels.extend(cls_labels.cpu().numpy())
                 all_seg_preds.extend(seg_preds.cpu().numpy())
                 all_seg_labels.extend(seg_labels.cpu().numpy())
                 
                 if batch_idx % 10 == 0:
                     logging.info(f'Evaluated batch {batch_idx}/{len(self.eval_loader)}')
         
-        final_metrics = {k: float(np.mean(v)) for k, v in metrics.items()}
+        # final_metrics = {k: float(np.mean(v)) for k, v in metrics.items()}
+        final_metrics = {}
+        for k, vals in metrics.items():
+            final_metrics[k] = float(np.mean(vals))
         logging.info("\nEvaluation Results:")
-        logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
+        if self.method == 'WS':
+            logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
         logging.info(f"Mean IoU: {final_metrics['mean_iou']:.4f}")
         logging.info(f"Pixel Accuracy: {final_metrics['pixel_accuracy']:.4f}")
         
