@@ -139,30 +139,50 @@ def main():
             transform=transform
         )
 
-        # Augment training dataset
-        logger.info("Creating augmented dataset...")
         if method == 'WS':
-            augmented = AugmentedDataset(train_dataset)
-            augmented._build_augmented_indices()
-            augmented.save_sample_pairs(
-            num_samples=5,
-            save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
-        )
-            full_train_dataset = ConcatDataset([train_dataset, augmented])
-            logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented)})")
+            if config['training']['use_augmentation']:
+                logger.info("Creating augmented dataset...")
+                augmented = AugmentedDataset(train_dataset)
+                augmented._build_augmented_indices()
+                augmented.save_sample_pairs(
+                num_samples=5,
+                save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
+            )
+                full_train_dataset = ConcatDataset([train_dataset, augmented])
+                logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented)})")
+                logger.info("Saving sample pairs of original and augmented images...")
         else:
             full_train_dataset = train_dataset
-        logger.info("Saving sample pairs of original and augmented images...")
+            logger.info(f"Training dataset size: {len(train_dataset)} samples")
 
     else:
         logger.info("Initializing test dataset for evaluation...")
-        test_dataset = PetDataset(
-            root_dir=config['data']['root_dir'],
-            split='test',
-            weak_supervision=True,
-            transform=transform
-        )
-        logger.info(f"Test dataset size: {len(test_dataset)} samples")                
+        if is_weak:
+            # 1) Dataset that returns the image‐level class label
+            weak_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = True,     # gives you batch['mask'] = class_idx
+                transform        = transform
+            )
+            # 2) Dataset that returns the full pixel mask
+            fs_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = False,    # gives you batch['mask'] = H×W mask
+                transform        = transform
+            )
+            # 3) Zip them together
+            eval_ds = list(zip(weak_ds, fs_ds))
+        else:
+            # Fully‐supervised: you only need the one dataset
+            eval_ds = PetDataset(
+                root_dir         = config['data']['root_dir'],
+                split            = 'test',
+                weak_supervision = False,
+                transform        = transform
+            )
+        logger.info(f"Test dataset size: {len(eval_ds)} samples")                
     # Initialize model
     logger.info("Initializing model...")
     # choose FS vs WS
@@ -217,7 +237,7 @@ def main():
         logger.info("Starting evaluation...")
         evaluator = Evaluator(
             model=model,
-            dataset=test_dataset,
+            dataset=eval_ds,
             config=config
         )
         metrics = evaluator.evaluate()
