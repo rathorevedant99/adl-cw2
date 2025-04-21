@@ -107,19 +107,24 @@ def main():
             transform=transform
         )
 
-        # Augment training dataset
-        logger.info("Creating augmented dataset...")
-        augmented_dataset = AugmentedDataset(train_dataset)
-        augmented_dataset._build_augmented_indices()
+        if config['training']['use_augmentation']:
+            # Augment training dataset
+            logger.info("Creating augmented dataset...")
+            augmented_dataset = AugmentedDataset(train_dataset)
+            augmented_dataset._build_augmented_indices()
 
-        logger.info("Saving sample pairs of original and augmented images...")
-        augmented_dataset.save_sample_pairs(
-            num_samples=5,
-            save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
-        )
+            logger.info("Saving sample pairs of original and augmented images...")
+            augmented_dataset.save_sample_pairs(
+                num_samples=5,
+                save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
+            )
 
-        full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
-        logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
+            full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
+            logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
+
+        else:
+            full_train_dataset = train_dataset
+            logger.info(f"Training dataset size: {len(full_train_dataset)} samples")
     
     else:
         logger.info("Initializing test dataset for evaluation...")
