@@ -151,6 +151,9 @@ def main():
                 full_train_dataset = ConcatDataset([train_dataset, augmented])
                 logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented)})")
                 logger.info("Saving sample pairs of original and augmented images...")
+            else:
+                full_train_dataset = train_dataset
+                logger.info(f"Training dataset size: {len(train_dataset)} samples")
         else:
             full_train_dataset = train_dataset
             logger.info(f"Training dataset size: {len(train_dataset)} samples")
