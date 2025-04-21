@@ -8,7 +8,8 @@ model:
 
 training:
   batch_size: 32
-  apply_region__growing: false
+  apply_region_growing: false
+  use_augmentation: true
   num_epochs: 20
   learning_rate: 0.001
   weight_decay: 0.0001
