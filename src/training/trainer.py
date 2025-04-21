@@ -60,7 +60,13 @@ class Trainer:
         self.checkpoint_dir = Path(config['training']['checkpoint_dir'])
         self.log_dir = Path(config['training']['log_dir'])
 
-        self.seg_loss_weight = config['training']['seg_loss_weight']
+        #self.seg_loss_weight = config['training']['seg_loss_weight']
+        if 'scribbles' in self.weak_supervision_types:
+            self.seg_loss_weight = 0.5
+        elif 'bboxes' in self.weak_supervision_types:
+            self.seg_loss_weight = 0.3
+        else:  # Only labels
+            self.seg_loss_weight = 0.1
         self.save_interval = config['training']['save_interval']
         self.apply_region_growing = config['training'].get('apply_region_growing', True)
 
