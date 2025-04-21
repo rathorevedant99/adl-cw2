@@ -94,3 +94,17 @@ class WeaklySupervisedSegmentationModelUNet(nn.Module):
         one_hot.scatter_(1, max_inds, 1.0)
         softened = refined_masks * one_hot
         return softened
+
+class FullySupervisedSegmentationModelUNet(nn.Module):
+    def __init__(self, num_classes, base_channels=32, bilinear=True):
+        super().__init__()
+        # UNetGenerator(in, out) already builds the encoder–decoder
+        self.unet = UNetGenerator(in_channels=3,
+                                  out_channels=num_classes,
+                                  base_channels=base_channels,
+                                  bilinear=bilinear)
+
+    def forward(self, x, **kwargs):
+        # ignore any extra args (labels/apply_region_growing)
+        seg_maps = self.unet(x)              # [B, C=num_classes, H, W]
+        return {'segmentation_maps': seg_maps}

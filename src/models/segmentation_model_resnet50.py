@@ -148,3 +148,29 @@ class WeaklySupervisedSegmentationModelResNet50(nn.Module):
         softened = refined_masks * one_hot
         
         return softened
+    
+class FullySupervisedSegmentationModelResNet50(nn.Module):
+    def __init__(self, num_classes, pretrained_backbone=True):
+        super().__init__()
+        # Load pretrained ResNet but don't include the top classifier
+        self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT if pretrained_backbone else None)
+        # Remove the avgpool and fc layers
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+        
+        # Add segmentation head
+        self.segmentation_head = nn.Sequential(
+            nn.Conv2d(2048, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, num_classes, kernel_size=1)
+        )
+        
+    def forward(self, x, **kwargs):
+        input_size = x.size()[-2:]
+        features = self.backbone(x)
+        seg_map = self.segmentation_head(features)
+        
+        # Upsample to match input resolution
+        seg_map = F.interpolate(seg_map, size=input_size, mode='bilinear', align_corners=False)
+        
+        return {'segmentation_maps': seg_map}

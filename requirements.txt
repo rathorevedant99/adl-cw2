@@ -11,3 +11,4 @@ sympy==1.13.1
 torch==2.6.0
 torchvision==0.21.0
 typing_extensions==4.13.1
+optuna==4.3.0

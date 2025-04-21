@@ -7,9 +7,10 @@ import sys
 import datetime
 import torchvision.transforms as T
 from torch.utils.data import ConcatDataset
+import shutil
 
-from src.models.segmentation_model_resnet50 import WeaklySupervisedSegmentationModelResNet50
-from src.models.segmentation_model_unet import WeaklySupervisedSegmentationModelUNet
+from src.models.segmentation_model_resnet50 import WeaklySupervisedSegmentationModelResNet50, FullySupervisedSegmentationModelResNet50
+from src.models.segmentation_model_unet import WeaklySupervisedSegmentationModelUNet, FullySupervisedSegmentationModelUNet
 from src.data import PetDataset
 from src.training.trainer import Trainer
 from src.training.evaluator import Evaluator
@@ -75,14 +76,45 @@ def main():
     logger.info("Starting pipeline")
     logger.info(f"Mode: {args.mode}")
     
+    method = config['model'].get('method', 'WS').upper()
+    if method not in ('FS', 'WS'):
+        raise ValueError(f"Unsupported method: {method}. Choose FS or WS.")
+    if method == 'FS':
+        config['model']['num_classes'] = 2
+    
+    is_weak = (method == 'WS')
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
     
-    if args.download:
-        logger.info("Downloading dataset...")
+    # Check if dataset exists and download if needed
+    data_path = Path(config['data']['root_dir'])
+    images_dir = data_path / 'images'
+    annotations_dir = data_path / 'annotations'
+    
+    # Check if dataset exists
+    if args.download or not images_dir.exists() or not annotations_dir.exists() or len(list(images_dir.glob('*.jpg'))) == 0:
+        logger.info("Dataset not found or download flag set. Downloading...")
         PetDataset.download_dataset(config['data']['root_dir'])
         logger.info("Dataset download and split completed")
+        
+        # After downloading, check if masks are in the right location
+        trimaps_dir = annotations_dir / 'trimaps'
+        if trimaps_dir.exists() and not any(annotations_dir.glob('*.png')):
+            logger.info("Moving mask files from trimaps to annotations directory...")
+            for png_file in trimaps_dir.glob('*.png'):
+                shutil.copy(png_file, annotations_dir / png_file.name)
+            logger.info("Mask files moved successfully.")
+    else:
+        logger.info("Dataset found. Skipping download.")
+        
+        # Still check for masks in the right location
+        trimaps_dir = annotations_dir / 'trimaps'
+        if trimaps_dir.exists() and not any(annotations_dir.glob('*.png')):
+            logger.info("Moving mask files from trimaps to annotations directory...")
+            for png_file in trimaps_dir.glob('*.png'):
+                shutil.copy(png_file, annotations_dir / png_file.name)
+            logger.info("Mask files moved successfully.")
     
     # Create basic transform pipeline
     transform = T.Compose([
@@ -97,30 +129,31 @@ def main():
         train_dataset = PetDataset(
             root_dir=config['data']['root_dir'],
             split='train',
-            weak_supervision=True,
+            weak_supervision=is_weak,
             transform=transform
         )
         val_dataset = PetDataset(
             root_dir=config['data']['root_dir'],
             split='val',
-            weak_supervision=True,
+            weak_supervision=is_weak,
             transform=transform
         )
 
         # Augment training dataset
         logger.info("Creating augmented dataset...")
-        augmented_dataset = AugmentedDataset(train_dataset)
-        augmented_dataset._build_augmented_indices()
-
-        logger.info("Saving sample pairs of original and augmented images...")
-        augmented_dataset.save_sample_pairs(
+        if method == 'WS':
+            augmented = AugmentedDataset(train_dataset)
+            augmented._build_augmented_indices()
+            augmented.save_sample_pairs(
             num_samples=5,
             save_dir=Path(config['training']['log_dir']) / 'augmentation_samples'
         )
+            full_train_dataset = ConcatDataset([train_dataset, augmented])
+            logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented)})")
+        else:
+            full_train_dataset = train_dataset
+        logger.info("Saving sample pairs of original and augmented images...")
 
-        full_train_dataset = ConcatDataset([train_dataset, augmented_dataset])
-        logger.info(f"Combined dataset size: {len(full_train_dataset)} (original: {len(train_dataset)}, augmented: {len(augmented_dataset)})")
-    
     else:
         logger.info("Initializing test dataset for evaluation...")
         test_dataset = PetDataset(
@@ -129,21 +162,36 @@ def main():
             weak_supervision=True,
             transform=transform
         )
-        logger.info(f"Test dataset size: {len(test_dataset)} samples")
-
+        logger.info(f"Test dataset size: {len(test_dataset)} samples")                
     # Initialize model
     logger.info("Initializing model...")
-    if config['model']['backbone'] == 'resnet50':
-        model = WeaklySupervisedSegmentationModelResNet50(
-            num_classes=config['model']['num_classes'],
-        ).to(device)
-    elif config['model']['backbone'] == 'unet':
-        model = WeaklySupervisedSegmentationModelUNet(
-            num_classes=config['model']['num_classes'],
-        ).to(device)
+    # choose FS vs WS
+    if method =='WS':
+        if config['model']['backbone'] == 'resnet50':
+            model = WeaklySupervisedSegmentationModelResNet50(
+                num_classes=config['model']['num_classes'],
+            ).to(device)
+        elif config['model']['backbone'] == 'unet':
+            model = WeaklySupervisedSegmentationModelUNet(
+                num_classes=config['model']['num_classes'],
+            ).to(device)
+        else:
+            raise ValueError(f"Unsupported backbone: {config['model']['backbone']}")
+    elif method == 'FS':
+        if config['model']['backbone'] == 'resnet50':
+            model = FullySupervisedSegmentationModelResNet50(
+                num_classes=config['model']['num_classes'],
+            ).to(device)
+        elif config['model']['backbone'] == 'unet':
+            model = FullySupervisedSegmentationModelUNet(
+                num_classes=config['model']['num_classes'],
+            ).to(device)
+        else:
+            raise ValueError(f"Unsupported backbone: {config['model']['backbone']}")
     else:
-        raise ValueError(f"Unsupported backbone: {config['model']['backbone']}")
+        raise ValueError(f"Unsupported supervised method: {config['model']['method']}")
     logger.info("Model initialized")
+
     
     if args.mode == 'train':
         logger.info("Starting training...")
@@ -155,7 +203,6 @@ def main():
         )
         trainer.train()
         logger.info("Training completed")
-    
     else:
         if not args.checkpoint:
             raise ValueError("Checkpoint path must be provided for evaluation mode")
@@ -178,7 +225,6 @@ def main():
         logger.info("Evaluation metrics:")
         for metric_name, value in metrics.items():
             logger.info(f"{metric_name}: {value:.4f}")
-
 
 if __name__ == '__main__':
     main()

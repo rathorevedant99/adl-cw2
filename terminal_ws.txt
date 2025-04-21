@@ -1,0 +1,426 @@
+PS G:\London\UCL\Artificial_Intelligence_and_Medical_Imaging\Applied_Deep_Learning\CW\Coursework2\Code\cw2_optuna> python hyper_tun.py --mode train --config config.yaml --subset-size 100 --n-trials 10
+[I 2025-04-20 17:43:49,757] A new study created in RDB with name: pet_segmentation
+G:\London\UCL\Artificial_Intelligence_and_Medical_Imaging\Applied_Deep_Learning\CW\Coursework2\Code\cw2_optuna\hyper_tun.py:120: FutureWarning: suggest_loguniform has been deprecated in v3.0.0. This feature will be removed in v6.0.0. See https://github.com/optuna/optuna/releases/tag/v3.0.0. Use suggest_float(..., log=True) instead.
+  config['training']['learning_rate'] = trial.suggest_loguniform('lr', 1e-4, 1e-3)
+G:\London\UCL\Artificial_Intelligence_and_Medical_Imaging\Applied_Deep_Learning\CW\Coursework2\Code\cw2_optuna\hyper_tun.py:121: FutureWarning: suggest_loguniform has been deprecated in v3.0.0. This feature will be removed in v6.0.0. See https://github.com/optuna/optuna/releases/tag/v3.0.0. Use suggest_float(..., log=True) instead.
+  config['training']['weight_decay'] = trial.suggest_loguniform('wd', 1e-5, 1e-3)
+2025-04-20 17:43:49,795 - root - INFO - Trial #0: lr=0.0002639855889713405, wd=0.0002131966590076931, wseg=0.24261340086896632
+2025-04-20 17:43:51,529 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 17:43:51,530 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:43:51,531 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 17:43:51,531 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 17:43:51,532 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 17:43:51,532 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 17:43:51,532 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:43:51,536 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 17:43:51,537 - root - INFO - Validation set size: 1478 samples
+2025-04-20 17:43:52,700 - root - INFO - Created augmented dataset with 89 augmented images
+2025-04-20 17:43:52,700 - root - INFO - Combined WS train size: 189 (subset + augmented)
+2025-04-20 17:43:53,478 - root - INFO - Using device: cuda
+2025-04-20 17:43:53,480 - root - INFO - Epoch 1/3
+2025-04-20 17:44:33,045 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:44:33,045 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:44:33,062 - root - INFO - Label values: tensor([ 0, 18, 27,  9, 10, 23, 17, 10, 13,  1,  3,  5, 12, 30, 31, 12, 33, 30,
+         5, 33, 31, 12, 12, 32, 23, 24, 14, 20, 21, 20, 20, 26],
+       device='cuda:0')
+2025-04-20 17:44:33,063 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:44:36,197 - root - INFO - Batch 0/6, Loss: 8.1208
+2025-04-20 17:44:36,204 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:44:36,204 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:44:36,206 - root - INFO - Label values: tensor([ 5, 18, 15,  1, 12,  1, 12,  5,  8, 33,  5, 31, 28, 12, 32, 15, 30, 20,
+         4, 31, 21, 22,  4,  8, 25, 15, 12, 12,  8, 17, 17, 15],
+       device='cuda:0')
+2025-04-20 17:44:36,206 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:44:48,573 - root - INFO - Epoch 1 training loss: 8.0062
+2025-04-20 17:45:47,154 - root - INFO - Epoch 1 validation loss: 5025.6017
+2025-04-20 17:45:47,230 - root - INFO - Epoch 2/3
+2025-04-20 17:46:28,947 - root - INFO - Batch 0/6, Loss: 6.2517
+2025-04-20 17:46:41,187 - root - INFO - Epoch 2 training loss: 5.2587
+2025-04-20 17:47:29,268 - root - INFO - Epoch 2 validation loss: 3.8534
+2025-04-20 17:47:29,281 - root - INFO - Epoch 3/3
+2025-04-20 17:48:10,199 - root - INFO - Batch 0/6, Loss: 4.7338
+2025-04-20 17:48:23,597 - root - INFO - Epoch 3 training loss: 4.6649
+2025-04-20 17:49:12,001 - root - INFO - Epoch 3 validation loss: 3.8534
+2025-04-20 17:49:12,093 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
+[I 2025-04-20 17:49:12,110] Trial 0 finished with value: 3.853380928648279 and parameters: {'lr': 0.0002639855889713405, 'wd': 0.0002131966590076931, 'wseg': 0.24261340086896632}. Best is trial 0 with value: 3.853380928648279.
+2025-04-20 17:49:12,140 - root - INFO - Trial #1: lr=0.0009459348511897675, wd=2.111039625524573e-05, wseg=0.4844543677586286
+2025-04-20 17:49:12,238 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 17:49:12,239 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:49:12,240 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 17:49:12,241 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 17:49:12,241 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 17:49:12,241 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 17:49:12,241 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:49:12,242 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 17:49:12,243 - root - INFO - Validation set size: 1478 samples
+2025-04-20 17:49:13,284 - root - INFO - Created augmented dataset with 92 augmented images
+2025-04-20 17:49:13,284 - root - INFO - Combined WS train size: 192 (subset + augmented)
+2025-04-20 17:49:13,558 - root - INFO - Using device: cuda
+2025-04-20 17:49:13,560 - root - INFO - Epoch 1/3
+2025-04-20 17:49:51,829 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:49:51,830 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:49:51,831 - root - INFO - Label values: tensor([32, 22,  2, 33, 32, 20, 17,  0, 26,  7, 19, 26,  7, 31, 26, 32,  7, 28,
+         1, 24, 17, 13,  1, 29, 17, 24, 20, 10, 32,  6, 32, 18],
+       device='cuda:0')
+2025-04-20 17:49:51,832 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:49:54,161 - root - INFO - Batch 0/6, Loss: 5.7621
+2025-04-20 17:49:54,170 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:49:54,171 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:49:54,171 - root - INFO - Label values: tensor([13, 18, 10, 29, 33, 10, 27, 32, 32,  4,  3, 11, 19, 17, 33, 13, 13, 34,
+        12, 17,  0,  0,  2, 14, 13,  8, 21, 32, 27,  9, 27, 21],
+       device='cuda:0')
+2025-04-20 17:49:54,172 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:50:06,523 - root - INFO - Epoch 1 training loss: 15.4318
+2025-04-20 17:51:06,309 - root - INFO - Epoch 1 validation loss: 12684787.2766
+2025-04-20 17:51:06,398 - root - INFO - Epoch 2/3
+2025-04-20 17:51:47,306 - root - INFO - Batch 0/6, Loss: 5.3507
+2025-04-20 17:51:56,412 - root - INFO - Epoch 2 training loss: 9.3564
+2025-04-20 17:52:46,801 - root - INFO - Epoch 2 validation loss: 4.8314
+2025-04-20 17:52:46,870 - root - INFO - Epoch 3/3
+2025-04-20 17:53:27,396 - root - INFO - Batch 0/6, Loss: 5.6491
+2025-04-20 17:53:35,304 - root - INFO - Epoch 3 training loss: 8.4705
+2025-04-20 17:54:23,583 - root - INFO - Epoch 3 validation loss: 4.0947
+2025-04-20 17:54:23,621 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
+[I 2025-04-20 17:54:23,642] Trial 1 finished with value: 4.094732801964942 and parameters: {'lr': 0.0009459348511897675, 'wd': 2.111039625524573e-05, 'wseg': 0.4844543677586286}. Best is trial 0 with value: 3.853380928648279.
+2025-04-20 17:54:23,680 - root - INFO - Trial #2: lr=0.0001834717931285926, wd=5.3557727233396226e-05, wseg=0.3755212105826432
+2025-04-20 17:54:23,702 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 17:54:23,702 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:54:23,704 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 17:54:23,704 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 17:54:23,704 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 17:54:23,704 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 17:54:23,704 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:54:23,707 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 17:54:23,707 - root - INFO - Validation set size: 1478 samples
+2025-04-20 17:54:24,809 - root - INFO - Created augmented dataset with 95 augmented images
+2025-04-20 17:54:24,809 - root - INFO - Combined WS train size: 195 (subset + augmented)
+2025-04-20 17:54:25,090 - root - INFO - Using device: cuda
+2025-04-20 17:54:25,092 - root - INFO - Epoch 1/3
+2025-04-20 17:55:03,541 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:55:03,542 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:55:03,543 - root - INFO - Label values: tensor([27, 34, 26, 12, 34, 29,  7, 17, 11,  4, 24, 33,  1, 17, 20, 32, 14, 19,
+         7, 30, 20, 11, 15, 32, 24, 19,  2, 25, 24, 14, 15, 12],
+       device='cuda:0')
+2025-04-20 17:55:03,543 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:55:05,971 - root - INFO - Batch 0/7, Loss: 6.8208
+2025-04-20 17:55:05,980 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 17:55:05,980 - root - INFO - Label dtype: torch.int64
+2025-04-20 17:55:05,981 - root - INFO - Label values: tensor([18,  9,  0, 31,  1, 14, 31,  6, 12, 25, 16, 17, 20, 15, 19, 33, 21, 20,
+        19, 10, 28, 10, 12, 29, 11, 27,  3, 11,  4, 18, 32, 25],
+       device='cuda:0')
+2025-04-20 17:55:05,981 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 17:55:22,663 - root - INFO - Epoch 1 training loss: 6.5178
+2025-04-20 17:56:23,353 - root - INFO - Epoch 1 validation loss: 1913.8161
+2025-04-20 17:56:23,447 - root - INFO - Epoch 2/3
+2025-04-20 17:57:04,414 - root - INFO - Batch 0/7, Loss: 5.2042
+2025-04-20 17:57:20,056 - root - INFO - Epoch 2 training loss: 4.9805
+2025-04-20 17:58:08,274 - root - INFO - Epoch 2 validation loss: 3.9864
+2025-04-20 17:58:08,368 - root - INFO - Epoch 3/3
+2025-04-20 17:58:49,275 - root - INFO - Batch 0/7, Loss: 4.7429
+2025-04-20 17:59:05,248 - root - INFO - Epoch 3 training loss: 4.6519
+2025-04-20 17:59:53,290 - root - INFO - Epoch 3 validation loss: 3.9864
+2025-04-20 17:59:53,426 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
+[I 2025-04-20 17:59:53,440] Trial 2 finished with value: 3.9864265005639257 and parameters: {'lr': 0.0001834717931285926, 'wd': 5.3557727233396226e-05, 'wseg': 0.3755212105826432}. Best is trial 0 with value: 3.853380928648279.
+2025-04-20 17:59:53,468 - root - INFO - Trial #3: lr=0.00012309251668243278, wd=0.00036547033020438126, wseg=0.10793136829626793
+2025-04-20 17:59:53,491 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 17:59:53,492 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:59:53,493 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 17:59:53,493 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 17:59:53,493 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 17:59:53,493 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 17:59:53,494 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 17:59:53,495 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 17:59:53,495 - root - INFO - Validation set size: 1478 samples
+2025-04-20 17:59:54,556 - root - INFO - Created augmented dataset with 94 augmented images
+2025-04-20 17:59:54,556 - root - INFO - Combined WS train size: 194 (subset + augmented)
+2025-04-20 17:59:54,829 - root - INFO - Using device: cuda
+2025-04-20 17:59:54,831 - root - INFO - Epoch 1/3
+2025-04-20 18:00:33,180 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:00:33,180 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:00:33,181 - root - INFO - Label values: tensor([25, 33, 34, 11, 18,  3, 14, 10, 18, 30, 20,  9, 14, 34, 20, 21, 24, 24,
+        34,  3, 23, 16,  3, 30,  4,  7,  6, 24, 10, 24, 28,  5],
+       device='cuda:0')
+2025-04-20 18:00:33,181 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:00:35,345 - root - INFO - Batch 0/7, Loss: 9.2521
+2025-04-20 18:00:35,353 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:00:35,354 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:00:35,355 - root - INFO - Label values: tensor([ 5,  2,  0, 11, 10, 16, 14,  8,  5, 12, 25, 21,  0, 30, 25, 14, 31, 30,
+        34,  3, 24,  3,  0, 14, 13, 11,  5, 10, 28, 31, 29, 26],
+       device='cuda:0')
+2025-04-20 18:00:35,355 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:00:48,211 - root - INFO - Epoch 1 training loss: 7.5994
+2025-04-20 18:01:48,021 - root - INFO - Epoch 1 validation loss: 2100.9346
+2025-04-20 18:01:48,142 - root - INFO - Epoch 2/3
+2025-04-20 18:02:28,916 - root - INFO - Batch 0/7, Loss: 5.7245
+2025-04-20 18:02:40,843 - root - INFO - Epoch 2 training loss: 5.7647
+2025-04-20 18:03:28,919 - root - INFO - Epoch 2 validation loss: 3.7188
+2025-04-20 18:03:29,014 - root - INFO - Epoch 3/3
+2025-04-20 18:04:09,959 - root - INFO - Batch 0/7, Loss: 5.7345
+2025-04-20 18:04:21,180 - root - INFO - Epoch 3 training loss: 5.1326
+2025-04-20 18:05:09,572 - root - INFO - Epoch 3 validation loss: 3.7188
+2025-04-20 18:05:09,606 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
+[I 2025-04-20 18:05:09,622] Trial 3 finished with value: 3.718820541463 and parameters: {'lr': 0.00012309251668243278, 'wd': 0.00036547033020438126, 'wseg': 0.10793136829626793}. Best is trial 3 with value: 3.718820541463.
+2025-04-20 18:05:09,660 - root - INFO - Trial #4: lr=0.00015290097715296835, wd=1.2150312516539544e-05, wseg=0.2634028060118384
+2025-04-20 18:05:09,750 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:05:09,751 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:05:09,752 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:05:09,752 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:05:09,752 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:05:09,752 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:05:09,753 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:05:09,759 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:05:09,759 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:05:10,824 - root - INFO - Created augmented dataset with 91 augmented images
+2025-04-20 18:05:10,824 - root - INFO - Combined WS train size: 191 (subset + augmented)
+2025-04-20 18:05:11,102 - root - INFO - Using device: cuda
+2025-04-20 18:05:11,104 - root - INFO - Epoch 1/3
+2025-04-20 18:05:48,979 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:05:48,980 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:05:48,981 - root - INFO - Label values: tensor([ 4, 15, 24, 24, 17, 29, 25,  2, 30,  0, 15, 12,  9, 18, 15,  1, 24,  6,
+         5, 16, 29, 31, 15, 13, 26, 31, 26, 21,  7,  9,  7,  7],
+       device='cuda:0')
+2025-04-20 18:05:48,981 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:05:51,661 - root - INFO - Batch 0/6, Loss: 8.8462
+2025-04-20 18:05:51,669 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:05:51,669 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:05:51,670 - root - INFO - Label values: tensor([12, 20,  4, 32, 14, 10,  2, 31, 16, 12, 13, 11, 28,  5, 25, 34, 12, 11,
+        19, 13, 15,  7,  8, 24, 26,  4, 24, 34, 16, 12, 13,  1],
+       device='cuda:0')
+2025-04-20 18:05:51,670 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:06:03,730 - root - INFO - Epoch 1 training loss: 7.7413
+2025-04-20 18:07:05,006 - root - INFO - Epoch 1 validation loss: 1372.2088
+2025-04-20 18:07:05,125 - root - INFO - Epoch 2/3
+2025-04-20 18:07:45,869 - root - INFO - Batch 0/6, Loss: 7.2979
+2025-04-20 18:07:57,521 - root - INFO - Epoch 2 training loss: 5.8114
+2025-04-20 18:08:45,942 - root - INFO - Epoch 2 validation loss: 3.8743
+2025-04-20 18:08:45,956 - root - INFO - Epoch 3/3
+2025-04-20 18:09:26,161 - root - INFO - Batch 0/6, Loss: 3.9416
+2025-04-20 18:09:38,008 - root - INFO - Epoch 3 training loss: 4.7254
+2025-04-20 18:10:25,783 - root - INFO - Epoch 3 validation loss: 3.8743
+2025-04-20 18:10:25,819 - root - INFO - Loss plot saved to experiments/plots/loss_plot.png
+[I 2025-04-20 18:10:25,837] Trial 4 finished with value: 3.874250330823533 and parameters: {'lr': 0.00015290097715296835, 'wd': 1.2150312516539544e-05, 'wseg': 0.2634028060118384}. Best is trial 3 with value: 3.718820541463.
+2025-04-20 18:10:25,873 - root - INFO - Trial #5: lr=0.000683884488439935, wd=0.0008478249092222732, wseg=0.2715389924757306
+2025-04-20 18:10:25,895 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:10:25,895 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:10:25,896 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:10:25,897 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:10:25,897 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:10:25,897 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:10:25,897 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:10:25,901 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:10:25,901 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:10:26,995 - root - INFO - Created augmented dataset with 90 augmented images
+2025-04-20 18:10:26,995 - root - INFO - Combined WS train size: 190 (subset + augmented)
+2025-04-20 18:10:27,273 - root - INFO - Using device: cuda
+2025-04-20 18:10:27,275 - root - INFO - Epoch 1/3
+2025-04-20 18:11:05,774 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:11:05,775 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:11:05,777 - root - INFO - Label values: tensor([15, 29, 34, 14, 16, 29, 21, 17,  5, 28, 34, 21, 14, 26, 22, 17, 26,  8,
+         2, 30, 28, 17, 14, 28, 26, 17,  6,  7, 17, 21,  7, 23],
+       device='cuda:0')
+2025-04-20 18:11:05,777 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:11:08,631 - root - INFO - Batch 0/6, Loss: 5.1857
+2025-04-20 18:11:08,639 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:11:08,639 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:11:08,640 - root - INFO - Label values: tensor([18, 34, 28, 13, 17, 14, 25,  4, 17, 22, 17, 33,  4, 24,  8,  8, 26,  4,
+         3, 18, 15, 17,  7,  2, 18,  0, 14,  0,  0, 15, 26, 15],
+       device='cuda:0')
+2025-04-20 18:11:08,640 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:11:21,429 - root - INFO - Epoch 1 training loss: 13.9700
+2025-04-20 18:12:19,432 - root - INFO - Epoch 1 validation loss: 1442173.3963
+2025-04-20 18:12:19,534 - root - INFO - Epoch 2/3
+2025-04-20 18:13:00,230 - root - INFO - Batch 0/6, Loss: 8.2865
+2025-04-20 18:13:11,476 - root - INFO - Epoch 2 training loss: 8.0805
+2025-04-20 18:13:59,381 - root - INFO - Epoch 2 validation loss: 3.8823
+2025-04-20 18:13:59,396 - root - INFO - Epoch 3/3
+2025-04-20 18:14:39,956 - root - INFO - Batch 0/6, Loss: 5.7252
+2025-04-20 18:14:50,261 - root - INFO - Epoch 3 training loss: 5.6216
+2025-04-20 18:15:37,918 - root - INFO - Epoch 3 validation loss: 3.8822
+2025-04-20 18:15:37,932 - root - INFO - Pruning trial at epoch 3
+[I 2025-04-20 18:15:37,944] Trial 5 pruned.
+2025-04-20 18:15:37,987 - root - INFO - Trial #6: lr=0.0002667427340908017, wd=1.2906709991577579e-05, wseg=0.42112259568571453
+2025-04-20 18:15:38,008 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:15:38,009 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:15:38,010 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:15:38,011 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:15:38,011 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:15:38,011 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:15:38,011 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:15:38,014 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:15:38,014 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:15:39,105 - root - INFO - Created augmented dataset with 93 augmented images
+2025-04-20 18:15:39,105 - root - INFO - Combined WS train size: 193 (subset + augmented)
+2025-04-20 18:15:39,382 - root - INFO - Using device: cuda
+2025-04-20 18:15:39,383 - root - INFO - Epoch 1/3
+2025-04-20 18:16:17,744 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:16:17,744 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:16:17,746 - root - INFO - Label values: tensor([17, 17, 14,  0, 25, 23, 29,  0, 12, 16,  3, 10, 11, 25,  7, 10, 33,  3,
+         8, 26, 30, 13, 30, 13, 17, 16, 22,  1, 22, 27, 10, 24],
+       device='cuda:0')
+2025-04-20 18:16:17,747 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:16:20,077 - root - INFO - Batch 0/7, Loss: 10.2325
+2025-04-20 18:16:20,085 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:16:20,085 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:16:20,086 - root - INFO - Label values: tensor([25, 34,  1, 19, 13, 12, 11, 30, 23, 17, 29,  3,  8,  0,  8, 26, 17, 20,
+        10, 32,  7,  0, 12, 23,  8, 22, 21, 17, 29, 14,  1, 19],
+       device='cuda:0')
+2025-04-20 18:16:20,086 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:16:31,235 - root - INFO - Epoch 1 training loss: 8.3401
+2025-04-20 18:17:29,892 - root - INFO - Epoch 1 validation loss: 7135.0967
+2025-04-20 18:17:30,022 - root - INFO - Epoch 2/3
+2025-04-20 18:18:10,673 - root - INFO - Batch 0/7, Loss: 8.2413
+2025-04-20 18:18:21,469 - root - INFO - Epoch 2 training loss: 6.1108
+2025-04-20 18:19:09,881 - root - INFO - Epoch 2 validation loss: 4.0319
+2025-04-20 18:19:09,897 - root - INFO - Epoch 3/3
+2025-04-20 18:19:51,092 - root - INFO - Batch 0/7, Loss: 5.4639
+2025-04-20 18:20:03,979 - root - INFO - Epoch 3 training loss: 4.9558
+2025-04-20 18:20:51,895 - root - INFO - Epoch 3 validation loss: 4.0318
+2025-04-20 18:20:51,908 - root - INFO - Pruning trial at epoch 3
+[I 2025-04-20 18:20:51,919] Trial 6 pruned. 
+2025-04-20 18:20:51,958 - root - INFO - Trial #7: lr=0.00018476763885553647, wd=1.2951304809356158e-05, wseg=0.45196386157931057
+2025-04-20 18:20:51,979 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:20:51,980 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:20:51,981 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:20:51,981 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:20:51,982 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:20:51,982 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:20:51,982 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:20:51,984 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:20:51,985 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:20:53,054 - root - INFO - Created augmented dataset with 89 augmented images
+2025-04-20 18:20:53,054 - root - INFO - Combined WS train size: 189 (subset + augmented)
+2025-04-20 18:20:53,327 - root - INFO - Using device: cuda
+2025-04-20 18:20:53,329 - root - INFO - Epoch 1/3
+2025-04-20 18:21:31,530 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:21:31,530 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:21:31,532 - root - INFO - Label values: tensor([21,  1, 30, 23, 14, 27, 15, 32, 30, 24, 21,  8,  6, 12, 11, 26,  8,  4,
+        32,  4, 12, 25, 34, 25,  1, 33, 19,  3, 14, 15,  7, 27],
+       device='cuda:0')
+2025-04-20 18:21:31,532 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:21:33,950 - root - INFO - Batch 0/6, Loss: 8.6505
+2025-04-20 18:21:33,958 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:21:33,958 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:21:33,959 - root - INFO - Label values: tensor([34,  5,  8, 13, 17, 17,  9, 20, 32, 17, 12, 12,  8, 33, 31,  2,  4, 17,
+        34, 15,  4, 32, 31, 30, 15, 17, 23, 10, 14, 17,  4,  7],
+       device='cuda:0')
+2025-04-20 18:21:33,959 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:21:45,481 - root - INFO - Epoch 1 training loss: 7.8637
+2025-04-20 18:22:46,570 - root - INFO - Epoch 1 validation loss: 9867.9514
+2025-04-20 18:22:46,662 - root - INFO - Epoch 2/3
+2025-04-20 18:23:27,158 - root - INFO - Batch 0/6, Loss: 4.9001
+2025-04-20 18:23:38,210 - root - INFO - Epoch 2 training loss: 7.2687
+2025-04-20 18:24:26,627 - root - INFO - Epoch 2 validation loss: 4.0628
+2025-04-20 18:24:26,642 - root - INFO - Epoch 3/3
+2025-04-20 18:25:08,795 - root - INFO - Batch 0/6, Loss: 6.4676
+2025-04-20 18:25:19,847 - root - INFO - Epoch 3 training loss: 5.2208
+2025-04-20 18:26:07,848 - root - INFO - Epoch 3 validation loss: 4.0628
+2025-04-20 18:26:07,863 - root - INFO - Pruning trial at epoch 3
+[I 2025-04-20 18:26:07,875] Trial 7 pruned. 
+2025-04-20 18:26:07,912 - root - INFO - Trial #8: lr=0.0006639894926806499, wd=0.00045923104133968053, wseg=0.3374556817322335
+2025-04-20 18:26:07,996 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:26:07,997 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:26:07,998 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:26:07,998 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:26:07,998 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:26:07,998 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:26:08,000 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:26:08,006 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:26:08,006 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:26:09,060 - root - INFO - Created augmented dataset with 93 augmented images
+2025-04-20 18:26:09,060 - root - INFO - Combined WS train size: 193 (subset + augmented)
+2025-04-20 18:26:09,334 - root - INFO - Using device: cuda
+2025-04-20 18:26:09,336 - root - INFO - Epoch 1/3
+2025-04-20 18:26:47,817 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:26:47,818 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:26:47,819 - root - INFO - Label values: tensor([ 4, 27,  6, 20, 17,  6,  1, 22, 21, 22,  7, 13, 34, 23, 12, 34, 28, 13,
+        23, 25, 12, 19, 18, 19,  2, 11, 12, 30, 17, 20,  3, 21],
+       device='cuda:0')
+2025-04-20 18:26:47,819 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:26:50,160 - root - INFO - Batch 0/7, Loss: 9.1103
+2025-04-20 18:26:50,167 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:26:50,169 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:26:50,170 - root - INFO - Label values: tensor([26, 29,  5, 27, 28, 20, 19,  4, 21, 13, 16, 26, 34, 18,  9, 34, 10,  9,
+        23, 26,  7, 21, 32, 27, 13, 25,  8, 22,  0, 13, 23, 19],
+       device='cuda:0')
+2025-04-20 18:26:50,170 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:27:01,325 - root - INFO - Epoch 1 training loss: 12.5034
+2025-04-20 18:27:59,593 - root - INFO - Epoch 1 validation loss: 222240.0060
+2025-04-20 18:27:59,717 - root - INFO - Epoch 2/3
+2025-04-20 18:28:40,562 - root - INFO - Batch 0/7, Loss: 7.6132
+2025-04-20 18:28:50,332 - root - INFO - Epoch 2 training loss: 8.0823
+2025-04-20 18:29:38,825 - root - INFO - Epoch 2 validation loss: 3.9482
+2025-04-20 18:29:38,838 - root - INFO - Epoch 3/3
+2025-04-20 18:30:19,250 - root - INFO - Batch 0/7, Loss: 6.5873
+2025-04-20 18:30:29,090 - root - INFO - Epoch 3 training loss: 5.0656
+2025-04-20 18:29:38,825 - root - INFO - Epoch 2 validation loss: 3.9482
+2025-04-20 18:29:38,838 - root - INFO - Epoch 3/3
+2025-04-20 18:30:19,250 - root - INFO - Batch 0/7, Loss: 6.5873
+2025-04-20 18:30:29,090 - root - INFO - Epoch 3 training loss: 5.0656
+2025-04-20 18:29:38,838 - root - INFO - Epoch 3/3
+2025-04-20 18:30:19,250 - root - INFO - Batch 0/7, Loss: 6.5873
+2025-04-20 18:30:29,090 - root - INFO - Epoch 3 training loss: 5.0656
+2025-04-20 18:31:17,615 - root - INFO - Epoch 3 validation loss: 3.9481
+2025-04-20 18:31:17,632 - root - INFO - Pruning trial at epoch 3
+2025-04-20 18:30:29,090 - root - INFO - Epoch 3 training loss: 5.0656
+2025-04-20 18:31:17,615 - root - INFO - Epoch 3 validation loss: 3.9481
+2025-04-20 18:31:17,632 - root - INFO - Pruning trial at epoch 3
+2025-04-20 18:31:17,615 - root - INFO - Epoch 3 validation loss: 3.9481
+2025-04-20 18:31:17,632 - root - INFO - Pruning trial at epoch 3
+[I 2025-04-20 18:31:17,645] Trial 8 pruned.
+[I 2025-04-20 18:31:17,645] Trial 8 pruned.
+2025-04-20 18:31:17,686 - root - INFO - Trial #9: lr=0.00021766112668471254, wd=0.0009270478365697362, wseg=0.4502848516336886
+2025-04-20 18:31:17,708 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:31:17,686 - root - INFO - Trial #9: lr=0.00021766112668471254, wd=0.0009270478365697362, wseg=0.4502848516336886
+2025-04-20 18:31:17,708 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:31:17,708 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:31:17,708 - root - INFO - Initializing train dataset with weak_supervision=True
+2025-04-20 18:31:17,708 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:31:17,709 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:31:17,709 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:31:17,708 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:31:17,709 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:31:17,709 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:31:17,709 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:31:17,709 - root - INFO - Dataset initialized with 4434 images and 35 classes
+2025-04-20 18:31:17,709 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:31:17,709 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:31:17,709 - root - INFO - Raw train set size: 4434 samples
+2025-04-20 18:31:17,709 - root - INFO - Subsampled train set to 100 samples
+2025-04-20 18:31:17,709 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:31:17,709 - root - INFO - Initializing val dataset with weak_supervision=True
+2025-04-20 18:31:17,711 - root - INFO - Split files already exist and are not empty, skipping creation
+2025-04-20 18:31:17,712 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:31:17,712 - root - INFO - Dataset initialized with 1478 images and 35 classes
+2025-04-20 18:31:17,712 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:31:17,712 - root - INFO - Validation set size: 1478 samples
+2025-04-20 18:31:18,817 - root - INFO - Created augmented dataset with 94 augmented images
+2025-04-20 18:31:18,817 - root - INFO - Combined WS train size: 194 (subset + augmented)
+2025-04-20 18:31:19,097 - root - INFO - Using device: cuda
+2025-04-20 18:31:19,099 - root - INFO - Epoch 1/3
+2025-04-20 18:31:57,301 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:31:57,301 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:31:57,301 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:31:57,302 - root - INFO - Label values: tensor([ 7,  4, 19, 21, 29,  3,  2, 15,  6, 22, 29,  0, 17, 23, 30, 17, 33,  9,
+        19,  9, 33, 13, 10,  9, 12, 33, 14,  3,  0, 13, 31, 26],
+       device='cuda:0')
+2025-04-20 18:31:57,303 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:31:59,861 - root - INFO - Batch 0/7, Loss: 11.5084
+2025-04-20 18:31:59,869 - root - INFO - Label shape: torch.Size([32])
+2025-04-20 18:31:59,869 - root - INFO - Label dtype: torch.int64
+2025-04-20 18:31:59,871 - root - INFO - Label values: tensor([17, 10,  2, 14, 12,  9, 20,  9, 14, 34,  5, 33, 18, 21, 26, 12, 14,  4,
+        26, 17, 11, 21, 21, 17, 10, 17,  1, 12, 33, 21, 34, 22],
+       device='cuda:0')
+2025-04-20 18:31:59,871 - root - INFO - CONFIRMATION: Labels are scalar values (one per image)
+2025-04-20 18:32:12,358 - root - INFO - Epoch 1 training loss: 9.6653
+2025-04-20 18:33:12,726 - root - INFO - Epoch 1 validation loss: 4923.5181
+2025-04-20 18:33:12,817 - root - INFO - Epoch 2/3
+2025-04-20 18:33:53,270 - root - INFO - Batch 0/7, Loss: 3.9164
+2025-04-20 18:34:06,644 - root - INFO - Epoch 2 training loss: 6.8263
+2025-04-20 18:34:55,848 - root - INFO - Epoch 2 validation loss: 4.0611
+2025-04-20 18:34:56,004 - root - INFO - Epoch 3/3
+2025-04-20 18:35:36,673 - root - INFO - Batch 0/7, Loss: 5.1138
+2025-04-20 18:35:47,568 - root - INFO - Epoch 3 training loss: 5.9749
+2025-04-20 18:36:36,477 - root - INFO - Epoch 3 validation loss: 4.0610
+2025-04-20 18:36:36,587 - root - INFO - Pruning trial at epoch 3
+[I 2025-04-20 18:36:36,595] Trial 9 pruned.
+Best hyperparameters: {'lr': 0.00012309251668243278, 'wd': 0.00036547033020438126, 'wseg': 0.10793136829626793}
