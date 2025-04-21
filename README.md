@@ -22,6 +22,7 @@ This project implements a weakly-supervised neural network for semantic segmenta
 ├── experiments/      # Experiment configurations and results
 ├── requirements.txt  # Project dependencies
 ├── main.py           # Main entry point
+├── hyper_tun.py      # Code for findnig best hyperparameter
 ├── config.yaml       # Configuration file
 └── README.md         # Project documentation
 ```
@@ -57,6 +58,12 @@ python main.py --mode train --config config.yaml
 3. Evaluate the model:
 ```bash
 python main.py --mode eval --checkpoint checkpoint_name.pth
+```
+
+4. Hyperparameter tunning:
+the command "subset-size" will create a subset with smller size for optimizing hyperparameter in a higher speed.
+```bash
+python hyper_tun.py --mode train --config config.yaml --subset-size 500
 ```
 
 ## License
