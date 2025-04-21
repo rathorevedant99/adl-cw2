@@ -440,7 +440,7 @@ class PetDataset(Dataset):
         image_files = list(images_dir.glob('*.jpg'))
         image_names = [f.stem for f in image_files]
 
-        class_names = sorted(set(name.split('_')[0] for name in image_names))
+        class_names = sorted(set('_'.join(name.split('_')[:-1]) for name in image_names if '_' in name))
         with open(classes_file, 'w') as f:
             for class_name in class_names:
                 f.write(f"{class_name}\n")
