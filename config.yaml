@@ -8,10 +8,9 @@ model:
 
 training:
   batch_size: 32
-  apply_region_growing: false
-  use_augmentation: true
-  num_epochs: 20
-  learning_rate: 0.001
+  apply_region__growing: false
+  num_epochs: 100
+  learning_rate: 0.0003
   weight_decay: 0.0001
   checkpoint_dir: "experiments/checkpoints"
   log_dir: "experiments/logs"
