@@ -37,7 +37,7 @@ class Trainer:
             train_dataset,
             batch_size=config['training']['batch_size'],
             shuffle=True,
-            num_workers=config['training']['num_workers'],
+            num_workers=config['training']['num_workers'],    
             pin_memory=config['training'].get('pin_memory', False),
             persistent_workers=True
         )

@@ -24,9 +24,8 @@ class Evaluator:
             device_name = 'cpu'
         self.device = torch.device(device_name)
         logging.info(f"Using device: {self.device}")
-        
+
         self.model = self.model.to(self.device)
-        
         self.eval_loader = DataLoader(
             dataset,
             batch_size=config['evaluation']['batch_size'],
@@ -34,18 +33,18 @@ class Evaluator:
             num_workers=config['evaluation']['num_workers'],
             pin_memory=config['training'].get('pin_memory', False)
         )
-        
+
         self.viz_dir = Path(config.get('viz_dir', 'experiments/visualizations'))
         self.viz_dir.mkdir(parents=True, exist_ok=True)
-        
+
     def evaluate(self):
         self.model.eval()
         metrics = {'accuracy': [], 'mean_iou': [], 'pixel_accuracy': []}
-        
         logging.info('Starting model evaluation...')
+
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.eval_loader):
-                #unpack paired data in WS mode, or single ds in FS
+                # unpack paired data in WS mode, or single ds in FS
                 if self.method == 'WS':
                     weak_batch, fs_batch = batch
                     images     = weak_batch['image'].to(self.device)
@@ -56,6 +55,7 @@ class Evaluator:
                     images     = fs_batch['image'].to(self.device)
                     seg_labels = fs_batch['mask'].to(self.device)
                     cls_labels = None
+
                 outputs = self.model(images)
 
                 if self.method == 'WS':
@@ -84,25 +84,23 @@ class Evaluator:
 
                 metrics['mean_iou'].append(mean_iou)
                 metrics['pixel_accuracy'].append(pixel_acc)
-
                 if batch_idx % 10 == 0:
                     logging.info(f'Evaluated batch {batch_idx}/{len(self.eval_loader)}')
-        
+
         # aggregate metrics
         final_metrics = {k: float(np.mean(v)) for k, v in metrics.items()}
-
         logging.info("\nEvaluation Results:")
         if self.method == 'WS':
             logging.info(f"Classification Accuracy: {final_metrics['accuracy']:.4f}")
         logging.info(f"Mean IoU: {final_metrics['mean_iou']:.4f}")
         logging.info(f"Pixel Accuracy: {final_metrics['pixel_accuracy']:.4f}")
-        
+
         # visualize CAMs if WS
         if self.method == 'WS':
             self._visualize_cams()
         # visualize segmentation examples
         self._visualize_examples()
-        
+
         return final_metrics
 
     def _calc_seg_metrics(self, preds, labels):
@@ -110,7 +108,6 @@ class Evaluator:
         batch_size = preds.size(0)
         total_iou, total_acc = 0.0, 0.0
         num_classes = self.config['model']['num_classes']
-        
         for i in range(batch_size):
             pred_mask = preds[i]
             true_mask = labels[i]
@@ -128,7 +125,7 @@ class Evaluator:
             if ious:
                 total_iou += np.mean(ious)
         return total_iou / batch_size, total_acc / batch_size
-
+    
     def _calc_binary_metrics(self, preds, true_masks):
         """
         preds, true_masks: LongTensors of shape [B, H, W] with values 0 or 1.
@@ -164,22 +161,33 @@ class Evaluator:
                 b = int(255 * max(0, min(1, 1.5 - abs(4*v-1))))
                 cam_rgb.putpixel((x,y),(r,g,b))
         return cam_rgb
-
-    def _visualize_cams(self, num_samples=5):
+    def _visualize_cams(self, num_samples=3):
         logging.info(f"Generating CAM visualizations for {num_samples} samples...")
         indices = random.sample(range(len(self.dataset)), min(num_samples, len(self.dataset)))
         for idx in indices:
-            sample = self.dataset[idx]
-            image = sample['image'].unsqueeze(0).to(self.device)
-            true_label = sample['mask']
-            name = sample['image_name']
+            if self.method == 'WS':
+                # For paired datasets in WS mode
+                weak_sample, fs_sample = self.dataset[idx]
+                image = weak_sample['image'].unsqueeze(0).to(self.device)
+                true_label = weak_sample['mask']
+                name = weak_sample['image_name']
+            else:
+                # For single dataset in FS mode
+                sample = self.dataset[idx]
+                image = sample['image'].unsqueeze(0).to(self.device)
+                true_label = sample['mask']
+                name = sample['image_name']
+                
             with torch.no_grad():
                 out = self.model(image)
                 logits = out['logits']
                 seg_maps = out['segmentation_maps']
+            
             pred_label = logits.argmax(dim=1).item()
             true_cam = seg_maps[0, true_label].cpu().numpy()
             pred_cam = seg_maps[0, pred_label].cpu().numpy()
+            
+            # Rest of visualization code remains the same
             orig = image[0].cpu().numpy().transpose(1,2,0)
             orig = (orig * np.array([0.229,0.224,0.225]) + np.array([0.485,0.456,0.406])) * 255
             orig = orig.astype(np.uint8)
@@ -203,11 +211,19 @@ class Evaluator:
         logging.info(f"Saving {num_samples} example segmentations...")
         indices = random.sample(range(len(self.dataset)), min(num_samples, len(self.dataset)))
         for idx in indices:
-            sample = self.dataset[idx]
-            img_t = sample['image']
-            true_mask = sample['mask']
-            name = sample['image_name']
-
+            if self.method == 'WS':
+                # For paired datasets in WS mode
+                weak_sample, fs_sample = self.dataset[idx]
+                img_t = weak_sample['image']
+                true_mask = fs_sample['mask']  # Use the mask from the fully-supervised sample
+                name = weak_sample['image_name']
+            else:
+                # For single dataset in FS mode
+                sample = self.dataset[idx]
+                img_t = sample['image']
+                true_mask = sample['mask']
+                name = sample['image_name']
+                
             with torch.no_grad():
                 out = self.model(img_t.unsqueeze(0).to(self.device))
                 seg_map = out['segmentation_maps'][0].argmax(dim=0).cpu().numpy()
@@ -227,4 +243,3 @@ class Evaluator:
             path=self.viz_dir/f"example_{name}.png"
             canvas.save(path)
             logging.info(f"Saved example {path}")
-          
