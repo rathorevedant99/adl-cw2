@@ -141,7 +141,7 @@ def main():
 
         # Augment training dataset
         logger.info("Creating augmented dataset...")
-        if method == 'WS':
+        if method == 'WS' and config['training']['use_augmentation']:
             augmented = AugmentedDataset(train_dataset)
             augmented._build_augmented_indices()
             augmented.save_sample_pairs(
