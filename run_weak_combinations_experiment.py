@@ -1,3 +1,7 @@
+"""
+GenAI use declaration: Scaffold for this script was generated using GenAI tools (Anthropic's Claude)
+"""
+
 import argparse
 import yaml
 import torch
