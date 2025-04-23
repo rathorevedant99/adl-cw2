@@ -1,3 +1,7 @@
+"""
+GenAI use declaration: Scaffold for this script was generated using GenAI tools (Anthropic's Claude)
+"""
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
